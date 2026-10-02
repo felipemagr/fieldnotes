@@ -59,7 +59,8 @@ Rules:
   - Name the specific thing: "Empty charge-off date read as open" beats "Data quality issues".
   Good: "Nightly CSV, changes only" / "Empty maturity date: open-ended, or missing?" /
   "Timestamps have no offset". Bad: "The client needs an integration that can parse...".
-- Max 2 new items per section per update; empty lists are fine. Repeat nothing already given.
+- Add an item only if the engineer would act on it during this call. At most 1 new item per
+  section per update; empty lists are the normal case. Repeat nothing already given.
 - English only."""
 
 TEAMS_FILE = Path(__file__).resolve().parent.parent / "teams.md"

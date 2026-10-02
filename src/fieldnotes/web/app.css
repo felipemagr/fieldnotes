@@ -74,6 +74,7 @@ h1, h2 { margin: 0; }
   padding: 5px 14px;
 }
 .end:hover:not(:disabled) { background: var(--hover); }
+#all-notes[aria-pressed="true"] { background: var(--hover); }
 .end:disabled { color: var(--ink-3); cursor: default; }
 
 @keyframes pulse { 50% { opacity: 0.35; } }
@@ -104,8 +105,6 @@ h2 { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 12px
 .count { color: var(--ink-3); font-weight: 400; }
 .section ul { list-style: none; margin: 0; padding: 0; }
 .section .none { color: var(--ink-3); }
-.more button { border: 0; background: none; padding: 4px 0; color: var(--ink-3); font-size: 13px; }
-.more button:hover { color: var(--ink); text-decoration: underline; }
 .section[data-section="ask"] .item-text { font-size: 16px; }
 
 .item {

@@ -1,8 +1,10 @@
 // The live panel. One SSE stream from /events; every render is derived from server state.
 const $ = (id) => document.getElementById(id);
 const SECTIONS = ["needs", "mapping", "ask", "ops", "risks"];
-const SHOWN = 4; // newest items per section; the rest fold behind "+N more"
-const expanded = new Set();
+// Mid-call the panel shows only what you would act on: a few items per section, no client needs
+// (you just heard them). "All notes" shows everything; the report always covers everything.
+const FOCUS = { ask: 3, mapping: 3, ops: 2, risks: 2, needs: 0 };
+let allNotes = false;
 
 let state = { state: "connecting", report: null };
 const elements = new Map(); // item id -> <li>
@@ -110,7 +112,6 @@ function renderBoard(board, changed = []) {
       }
     }
     list.querySelector(".none")?.remove();
-    list.querySelector(".more")?.remove();
     items.forEach((item, index) => {
       let li = elements.get(item.id);
       const isNew = !li;
@@ -122,7 +123,7 @@ function renderBoard(board, changed = []) {
       li.classList.toggle("pinned", item.pinned);
       li.querySelector(".pin").title = item.pinned ? "Unpin" : "Pin";
       if (list.children[index] !== li) list.insertBefore(li, list.children[index] || null);
-      li.hidden = index >= SHOWN && !expanded.has(name);
+      li.hidden = !allNotes && index >= FOCUS[name]; // pinned items sort first, so they stay
       if ((isNew && fresh.size) || fresh.has(item.id)) {
         li.classList.remove("fresh");
         void li.offsetWidth; // restart the highlight
@@ -134,26 +135,16 @@ function renderBoard(board, changed = []) {
       none.className = "none";
       none.textContent = "—";
       list.append(none);
-    } else if (items.length > SHOWN) {
-      const more = document.createElement("li");
-      more.className = "more";
-      const toggle = document.createElement("button");
-      toggle.type = "button";
-      toggle.textContent = expanded.has(name) ? "Show less" : `+${items.length - SHOWN} more`;
-      toggle.addEventListener("click", () => {
-        expanded.has(name) ? expanded.delete(name) : expanded.add(name);
-        renderBoard(lastBoard);
-      });
-      more.append(toggle);
-      list.append(more);
     }
+    section.hidden = !allNotes && FOCUS[name] === 0;
     let count = section.querySelector("h2 .count");
     if (!count) {
       count = document.createElement("span");
       count.className = "count";
       section.querySelector("h2").append(count);
     }
-    count.textContent = items.length ? String(items.length) : "";
+    const extra = items.length - FOCUS[name];
+    count.textContent = allNotes ? String(items.length || "") : extra > 0 ? `+${extra}` : "";
   }
 }
 
@@ -281,6 +272,12 @@ function connect() {
   };
 }
 
+$("all-notes").addEventListener("click", (e) => {
+  allNotes = !allNotes;
+  e.currentTarget.textContent = allNotes ? "Focus" : "All notes";
+  e.currentTarget.setAttribute("aria-pressed", String(allNotes));
+  renderBoard(lastBoard);
+});
 $("copy-report").addEventListener("click", (e) => copy(state.report || "", e.currentTarget));
 $("end").addEventListener("click", () => {
   $("end").disabled = true;

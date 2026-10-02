@@ -76,6 +76,10 @@ uv run fieldnotes run --name demo     # terminal 1: opens the panel and starts l
 scripts/mock_call.sh                  # terminal 2: headphones on
 ```
 
+Mid-call the panel shows only what you would act on now: three questions to ask, three API
+mappings, two items for Ops and two risks. **All notes** in the top bar shows everything; the
+report always covers the whole call.
+
 The script shows your next line in yellow. Read it aloud, press Enter, and the client answers.
 When it finishes, click **End call** for the report. The script is `demo/mock_call.txt`: a
 Spanish consumer lender with a fixed Excel tape, Stripe repayments, blank DPD and an
