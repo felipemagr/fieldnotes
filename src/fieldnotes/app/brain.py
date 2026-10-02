@@ -45,7 +45,7 @@ Rules:
 - Domain hints: loan tape = one row per asset per snapshot; DPD = days past due; declarations =
   how assets reach the platform; dry_run = validate without persisting; external_id = idempotency
   key; webhooks arrive at least once and out of order.
-- client_needs are in the client's words ("Excel export we cannot change"), not engineering tasks.
+- client_needs are in the client's words ("CSV we cannot change"), not engineering tasks.
 - Each message shows what is already on the engineer's board. Never repeat, rephrase or split an
   item that is there; add only what the new turns reveal. If the new turns answer an open
   question, copy it verbatim into answered_questions. Never ask what the transcript already
@@ -56,9 +56,9 @@ Rules:
   - fence_mapping: need 4 words at most; approach 10 words at most and never repeats the
     endpoint (the panel shows it next to the need).
   - No adverbs, no hedging ("might", "consider", "ensure", "clarify", "confirm"), no em dashes.
-  - Name the specific thing: "Blank DPD read as 0" beats "Data quality issues".
-  Good: "Excel tape, format fixed" / "Blank DPD: not due yet, or unknown?" /
-  "Day and month swapped on parse". Bad: "The client needs an integration that can parse...".
+  - Name the specific thing: "Empty charge-off date read as open" beats "Data quality issues".
+  Good: "Nightly CSV, changes only" / "Empty maturity date: open-ended, or missing?" /
+  "Timestamps have no offset". Bad: "The client needs an integration that can parse...".
 - Max 2 new items per section per update; empty lists are fine. Repeat nothing already given.
 - English only."""
 

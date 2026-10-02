@@ -13,8 +13,9 @@ can break).
 - Identifiers and idempotency (`external_id`), validation (`dry_run`), monitoring runs.
 - Audit trail of what was sent and when, alerts when a file fails, duplicate prevention.
 
-Examples: "Excel tape, format fixed" → file adapter + `POST /v2/declarations`.
-"Prove what we sent" → keep each submission and its run id: engineer, not Ops.
+Examples: "Nightly CSV on SFTP, changes only" → SFTP adapter + a documented endpoint.
+"We must show regulators what we submitted" → keep each submission and its run id: engineer,
+not Ops.
 
 ## Ops (credit and commercial, internal)
 
@@ -23,10 +24,11 @@ in `fence_mapping`, and never in the email to the client.
 
 - Pricing, fees, advance rates, facility size, terms.
 - Eligibility criteria, concentration limits, covenants, borrowing base, waterfall.
-- What a clause means: day count, default definitions, how restructured loans count.
+- What a clause means: day count, default definitions, how modified or charged-off assets count.
 
-Examples: "Higher advance rate if data is clean?" → Ops. "Do restructured loans stay eligible?" →
-Ops. "Is there a column that flags a restructure?" → not Ops: ask the client.
+Examples: "What concentration limit applies to one merchant?" → Ops. "Do charged-off receivables
+leave the borrowing base?" → Ops. "Which column holds the charge-off date?" → not Ops: ask the
+client.
 
 ## Client
 
@@ -36,5 +38,5 @@ Owns their data and what it means. What we still need from them goes in `questio
 - Their systems and vendors, what they can and cannot change.
 - Who sends the files, who to call when one breaks, their time zone and cut-off.
 
-Examples: "Blank DPD: not due yet, or unknown?" → ask the client. "Who gets the alert when a file
-fails?" → ask the client.
+Examples: "Empty maturity date: open-ended, or missing?" → ask the client. "Who do we call when the
+nightly file is late?" → ask the client.
