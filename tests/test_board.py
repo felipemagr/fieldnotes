@@ -64,3 +64,22 @@ def test_short_item_does_not_swallow_a_specific_one():
     b.merge(Suggestion(questions_to_ask=["Time zones?"]))
     b.merge(Suggestion(questions_to_ask=["Is month end in Madrid time or UTC?"]))
     assert len(b.open_questions()) == 2
+
+
+def test_rephrased_question_is_a_duplicate():
+    assert similar(
+        "Which columns are loan ID, principal amount, fees, due date, status?",
+        "Which fields in the Excel describe principal, fees, due date, status?",
+    )
+    assert similar(
+        "Does Excel include borrower state and country per row?",
+        "Does the Excel have borrower state and country for each loan?",
+    )
+    assert not similar("Time zones?", "Is month end in Madrid time or UTC?")
+    assert not similar("Who gets the alert when a file fails?", "Can you send a sample file?")
+
+
+def test_brief_lists_the_board_for_the_model():
+    b = Board()
+    b.merge(Suggestion(client_needs=["Excel tape"], questions_to_ask=["Sample file?"]))
+    assert b.brief() == "client_needs: Excel tape\nquestions_to_ask (open): Sample file?"

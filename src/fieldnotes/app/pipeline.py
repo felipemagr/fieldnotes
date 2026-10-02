@@ -205,7 +205,7 @@ class CallSession:
         if self.state in (LISTENING, TRANSCRIBING):
             self._set_state(THINKING)
         try:
-            suggestion = await self.brain.analyse(batch, self.board.open_questions())
+            suggestion = await self.brain.analyse(batch, self.board.brief())
             if suggestion is not None:
                 changed = self.board.merge(suggestion)
                 ended = max((t.ended_at for t in batch if t.speaker == "client"), default=0)

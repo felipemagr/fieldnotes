@@ -31,16 +31,31 @@ def normalise(text: str) -> str:
     return re.sub(r"[^a-z0-9 ]+", "", re.sub(r"\s+", " ", text.lower())).strip()
 
 
+_STOPWORDS = (
+    "a an the and or of to in on for per by at as is are be do does did can could would should "
+    "will you your we our they their it its this that there any each with from into what which "
+    "who how when where why if not no"
+)
+STOPWORDS = set(_STOPWORDS.split())
+
+
+def content_words(text: str) -> set[str]:
+    """Meaningful words, crudely singular: "payments" and "payment" count once."""
+    return {w.removesuffix("s") for w in text.split() if w not in STOPWORDS and len(w) > 1}
+
+
 def similar(a: str, b: str) -> bool:
     a, b = normalise(a), normalise(b)
     if not a or not b:
         return a == b
-    if a == b:
+    if a == b or SequenceMatcher(None, a, b).ratio() >= SIMILAR:
         return True
-    # No substring rule: "Time zones" must not swallow "Time zones at month end, Madrid vs UTC".
-    words_a, words_b = set(a.split()), set(b.split())
-    jaccard = len(words_a & words_b) / len(words_a | words_b)
-    return jaccard >= 0.75 or SequenceMatcher(None, a, b).ratio() >= SIMILAR
+    # Same point, other words: most content words of the shorter item appear in the longer one.
+    # Items of one or two content words never match this way ("Time zones" must not swallow
+    # "Month end in Madrid time or UTC").
+    words_a, words_b = content_words(a), content_words(b)
+    shorter = min(len(words_a), len(words_b))
+    return shorter >= 3 and len(words_a & words_b) / shorter >= 0.6
 
 
 class Board:
@@ -120,6 +135,22 @@ class Board:
 
     def open_questions(self) -> list[str]:
         return [i.text for i in self.visible("ask")]
+
+    def brief(self) -> str:
+        """What the board already says, in the Suggestion's own field names, for the model."""
+        fields = {
+            "needs": "client_needs",
+            "mapping": "fence_mapping",
+            "ask": "questions_to_ask (open)",
+            "ops": "route_to_ops",
+            "risks": "risks",
+        }
+        lines = []
+        for section, field in fields.items():
+            items = [i.text for i in self.items if i.section == section and not i.answered]
+            if items:
+                lines.append(f"{field}: " + " | ".join(items))
+        return "\n".join(lines) or "(empty)"
 
     def as_text(self) -> str:
         """The board in plain words, for the post-call report prompt."""

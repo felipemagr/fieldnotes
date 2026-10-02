@@ -1,13 +1,8 @@
 // The live panel. One SSE stream from /events; every render is derived from server state.
 const $ = (id) => document.getElementById(id);
 const SECTIONS = ["needs", "mapping", "ask", "ops", "risks"];
-const EMPTY = {
-  needs: "Nothing yet.",
-  mapping: "Mappings to the API appear here.",
-  ask: "Questions to ask appear after the client speaks.",
-  ops: "Nothing for Ops yet.",
-  risks: "No risks spotted yet.",
-};
+const SHOWN = 4; // newest items per section; the rest fold behind "+N more"
+const expanded = new Set();
 
 let state = { state: "connecting", report: null };
 const elements = new Map(); // item id -> <li>
@@ -18,8 +13,8 @@ function renderState() {
   const shown = state.state;
   $("state").dataset.state = shown;
   $("state-text").textContent = shown;
-  $("latency").textContent = state.latency_s != null ? `last update ${state.latency_s.toFixed(1)} s` : "";
-  $("model").textContent = state.model ? `model ${state.model}` : "";
+  $("latency").textContent = state.latency_s != null ? `${state.latency_s.toFixed(1)} s` : "";
+  $("model").textContent = state.model || "";
   $("end").disabled = ["connecting", "writing report", "ended"].includes(state.state);
 }
 
@@ -54,15 +49,11 @@ function itemContent(item) {
   box.className = "item-text";
   box.append(document.createTextNode(item.text));
   if (item.section === "mapping") {
-    const approach = document.createElement("span");
-    approach.className = "sub";
-    approach.textContent = item.approach || "";
-    const where = document.createElement("span");
-    where.className = "sub";
+    // One line: need → endpoint #section. The approach goes underneath, quieter.
     const code = document.createElement("span");
     code.className = item.endpoint ? "endpoint" : "endpoint none";
-    code.textContent = item.endpoint || "not in docs, ask";
-    where.append(code);
+    code.textContent = item.endpoint || "not in docs";
+    box.append(document.createTextNode(" → "), code);
     if (item.doc_ref) {
       const ref = document.createElement("a");
       ref.className = "ref";
@@ -71,9 +62,12 @@ function itemContent(item) {
       ref.href = /^https?:/.test(item.doc_ref) ? item.doc_ref : "#";
       ref.textContent = item.doc_ref.includes("#") ? `#${item.doc_ref.split("#").pop()}` : "docs";
       ref.title = item.doc_ref;
-      where.append(ref);
+      box.append(ref);
     }
-    box.append(approach, where);
+    const approach = document.createElement("span");
+    approach.className = "sub";
+    approach.textContent = item.approach || "";
+    box.append(approach);
   }
   return box;
 }
@@ -93,7 +87,10 @@ function buildItem(item) {
   return li;
 }
 
+let lastBoard = { sections: {} };
+
 function renderBoard(board, changed = []) {
+  lastBoard = board;
   const fresh = new Set(changed);
   for (const name of SECTIONS) {
     const section = document.querySelector(`.section[data-section="${name}"]`);
@@ -107,6 +104,7 @@ function renderBoard(board, changed = []) {
       }
     }
     list.querySelector(".none")?.remove();
+    list.querySelector(".more")?.remove();
     items.forEach((item, index) => {
       let li = elements.get(item.id);
       const isNew = !li;
@@ -118,6 +116,7 @@ function renderBoard(board, changed = []) {
       li.classList.toggle("pinned", item.pinned);
       li.querySelector(".pin").title = item.pinned ? "Unpin" : "Pin";
       if (list.children[index] !== li) list.insertBefore(li, list.children[index] || null);
+      li.hidden = index >= SHOWN && !expanded.has(name);
       if ((isNew && fresh.size) || fresh.has(item.id)) {
         li.classList.remove("fresh");
         void li.offsetWidth; // restart the highlight
@@ -127,8 +126,20 @@ function renderBoard(board, changed = []) {
     if (!items.length) {
       const none = document.createElement("li");
       none.className = "none";
-      none.textContent = EMPTY[name];
+      none.textContent = "—";
       list.append(none);
+    } else if (items.length > SHOWN) {
+      const more = document.createElement("li");
+      more.className = "more";
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.textContent = expanded.has(name) ? "Show less" : `+${items.length - SHOWN} more`;
+      toggle.addEventListener("click", () => {
+        expanded.has(name) ? expanded.delete(name) : expanded.add(name);
+        renderBoard(lastBoard);
+      });
+      more.append(toggle);
+      list.append(more);
     }
     let count = section.querySelector("h2 .count");
     if (!count) {

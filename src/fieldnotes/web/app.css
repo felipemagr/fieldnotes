@@ -103,7 +103,9 @@ h2 { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 12px
 .section h2 { display: flex; gap: 8px; align-items: baseline; }
 .count { color: var(--ink-3); font-weight: 400; }
 .section ul { list-style: none; margin: 0; padding: 0; }
-.section .none { color: var(--ink-3); font-size: 13px; }
+.section .none { color: var(--ink-3); }
+.more button { border: 0; background: none; padding: 4px 0; color: var(--ink-3); font-size: 13px; }
+.more button:hover { color: var(--ink); text-decoration: underline; }
 .section[data-section="ask"] .item-text { font-size: 16px; }
 
 .item {
@@ -119,7 +121,7 @@ h2 { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 12px
 }
 .item-text { flex: 1; min-width: 0; }
 .sub { display: block; color: var(--ink-2); font-size: 13.5px; margin-top: 2px; }
-.endpoint { font: 12.5px/1.4 ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink); }
+.endpoint { font: 13px/1.4 ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink); }
 .endpoint.none { font-family: inherit; color: var(--ink-3); }
 .ref { font-size: 12.5px; color: var(--ink-3); text-decoration: none; margin-left: 6px; }
 .ref:hover { text-decoration: underline; }

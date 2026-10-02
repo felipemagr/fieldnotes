@@ -45,11 +45,20 @@ Rules:
   how assets reach the platform; dry_run = validate without persisting; external_id = idempotency
   key; webhooks arrive at least once and out of order.
 - client_needs are in the client's words ("Excel export we cannot change"), not engineering tasks.
-- Each message lists the questions still open on the engineer's board. Never add one that means
-  the same as an open one. If the new turns answer an open question, copy it verbatim into
-  answered_questions.
-- Be short: every item 15 words at most. Max 3 new items per section per update, fewer is better.
-  Do not repeat items already given unless they changed. Empty lists are fine.
+- Each message shows what is already on the engineer's board. Never repeat, rephrase or split an
+  item that is there; add only what the new turns reveal. If the new turns answer an open
+  question, copy it verbatim into answered_questions. Never ask what the transcript already
+  answered.
+- The engineer reads the board mid-call in one glance. Write like notes, not sentences:
+  - client_needs, route_to_ops, risks: 8 words at most. Drop articles and filler.
+  - questions_to_ask: 12 words at most, one question, said the way a person asks it.
+  - fence_mapping: need 4 words at most; approach 10 words at most and never repeats the
+    endpoint (the panel shows it next to the need).
+  - No adverbs, no hedging ("might", "consider", "ensure", "clarify", "confirm"), no em dashes.
+  - Name the specific thing: "Blank DPD read as 0" beats "Data quality issues".
+  Good: "Excel tape, format fixed" / "Blank DPD: not due yet, or unknown?" /
+  "Day and month swapped on parse". Bad: "The client needs an integration that can parse...".
+- Max 2 new items per section per update; empty lists are fine. Repeat nothing already given.
 - English only."""
 
 CONTEXT_TEMPLATE = """\
@@ -62,7 +71,9 @@ Reply with exactly: OK
 
 REPORT_PROMPT = """\
 {marker} Write the post-call report in markdown, for the engineer to edit. No JSON, no title:
-start directly with "## Summary". Use exactly these sections:
+start directly with "## Summary". Plain and short: bullets of 15 words at most, no adverbs, no
+hedging, no em dashes, no restating the transcript. Summary is 3 bullets.
+Use exactly these sections:
 ## Summary
 ## Decisions made
 ## Open questions for Ops
@@ -70,7 +81,7 @@ start directly with "## Summary". Use exactly these sections:
 (numbered steps; name data sources and only documented endpoints)
 ## Risks
 ## Draft follow-up email
-(mark it DRAFT; the engineer edits and sends it, nothing is sent automatically)
+(mark it DRAFT; under 120 words; the engineer edits and sends it, nothing is sent automatically)
 
 The whole call, start to end:
 {turns}
@@ -131,15 +142,13 @@ class Brain:
         self._healthy = True
         logger.info("Brain ready in %.1fs (%s)", time.perf_counter() - t, self.model)
 
-    async def analyse(
-        self, turns: list[Turn], open_questions: list[str] | None = None
-    ) -> Suggestion | None:
+    async def analyse(self, turns: list[Turn], board: str = "(empty)") -> Suggestion | None:
         """A Suggestion for the new turns, or None when the model does not give a valid one."""
         t = time.perf_counter()
-        still_open = "\n".join(f"- {q}" for q in open_questions or []) or "(none)"
         prompt = (
             f"New turns:\n{format_turns(turns)}\n\n"
-            f"Questions still open on the board:\n{still_open}\n\nReturn the JSON object."
+            f"Already on the board (dismissed items included):\n{board}\n\n"
+            "Return the JSON object with only what these turns add."
         )
         answer = await self._send(prompt)
         try:
