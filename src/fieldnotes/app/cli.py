@@ -3,7 +3,6 @@
 import logging
 import time
 import webbrowser
-from pathlib import Path
 from threading import Timer
 from typing import Annotated
 
@@ -75,9 +74,6 @@ def docs_pull(
 
 @app.command()
 def run(
-    replay: Annotated[Path | None, typer.Option(help="Replay a transcript, no audio")] = None,
-    fake_llm: Annotated[bool, typer.Option(help="Canned answers, no model calls")] = False,
-    speed: Annotated[float, typer.Option(help="Replay speed multiplier")] = 1.0,
     name: Annotated[str, typer.Option(help="Call name, used in the report file name")] = "call",
     model: Annotated[str | None, typer.Option(help="haiku or sonnet")] = None,
     docs_url: Annotated[str | None, typer.Option()] = None,
@@ -97,27 +93,16 @@ def run(
     s = get_settings()
     cleanup(s.calls_dir, s.retention_days)
 
-    if replay:
-        from fieldnotes.adapters.replay import ReplaySource
+    from fieldnotes.adapters.llm_agent_sdk import ClaudeAgentSDKLLM
 
-        source = ReplaySource(replay, speed)
-    else:
-        source = build_live_source()
-
-    if fake_llm:
-        from fieldnotes.adapters.fake_llm import FakeLLM
-
-        llm = FakeLLM()
-    else:
-        from fieldnotes.adapters.llm_agent_sdk import ClaudeAgentSDKLLM
-
-        llm = ClaudeAgentSDKLLM(model or s.model)
+    source = build_live_source()
+    llm = ClaudeAgentSDKLLM(model or s.model)
 
     url = docs_url or s.docs_url
     session = CallSession(
         source=source,
         brain=Brain(llm, s.llm_start_timeout_s, s.llm_timeout_s, s.report_timeout_s),
-        docs_loader=(lambda: "") if fake_llm else (lambda: load_docs(url, refresh_docs).markdown),
+        docs_loader=lambda: load_docs(url, refresh_docs).markdown,
         calls_dir=s.calls_dir,
         name=name,
         keep_transcripts=s.keep_transcripts,

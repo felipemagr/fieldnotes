@@ -48,34 +48,44 @@ thinking of the next question. Fieldnotes does the bookkeeping:
 
 ## Requirements
 
-- macOS on Apple Silicon (live transcription uses [MLX](https://github.com/ml-explore/mlx)).
-  Replay mode runs on any Mac.
+- macOS on Apple Silicon (transcription runs on [MLX](https://github.com/ml-explore/mlx))
 - [Homebrew](https://brew.sh)
 - A Claude subscription, logged in through [Claude Code](https://code.claude.com)
-- For live calls: [BlackHole 2ch](https://github.com/ExistentialAudio/BlackHole) and headphones
+- [BlackHole 2ch](https://github.com/ExistentialAudio/BlackHole) (installed for you) and headphones
 
 ## Quick start
 
 ```sh
 git clone git@github.com:felipemagr/fieldnotes.git && cd fieldnotes
 ./install.sh
-uv run fieldnotes run --replay demo/mock_call.txt
 ```
 
 `install.sh` checks the Mac, installs `uv` and the Python dependencies, and verifies that Claude
-is logged in with a Claude.ai account rather than an API key. It also pulls the API docs, offers
-to install BlackHole and download the Whisper model (~1.6 GB), and finishes by running the
-tests. It is safe to run again. Use `./install.sh --no-audio` to skip the audio stack.
+is logged in with a Claude.ai account rather than an API key. It also pulls the API docs, installs
+BlackHole and downloads the Whisper model (~1.6 GB), asking before each, and finishes by running
+the tests. It is safe to run again.
 
-The panel opens at <http://127.0.0.1:8765> and the mock call starts playing.
+## Demo
+
+A mock client call through the real audio path. A macOS voice plays the client into BlackHole,
+the way a call app delivers audio, and into your headphones. You read your own lines. Everything
+else is real: voice detection, Whisper, Claude, the panel and the report.
+
+```sh
+uv run fieldnotes run --name demo     # terminal 1: opens the panel and starts listening
+scripts/mock_call.sh                  # terminal 2: headphones on
+```
+
+The script shows your next line in yellow. Read it aloud, press Enter, and the client answers.
+When it finishes, click **End call** for the report. The script is `demo/mock_call.txt`: a
+Spanish consumer lender with a fixed Excel tape, Stripe repayments, blank DPD and an
+advance-rate question for Ops. [`docs/demo.md`](docs/demo.md) is a two-minute presenter script.
 
 ## Usage
 
 | Command | What it does |
 |---|---|
-| `fieldnotes run` | Live call: mic and call audio, transcription, live panel |
-| `fieldnotes run --replay FILE` | Play a transcript at speaking pace instead of live audio |
-| `fieldnotes run --fake-llm` | Canned answers, no model calls (UI work, offline demos) |
+| `fieldnotes run` | Listen to the call: mic and call audio, transcription, live panel |
 | `fieldnotes run --name "acme"` | Name the call (used in the report file name) |
 | `fieldnotes run --refresh-docs` | Re-crawl the docs before the call |
 | `fieldnotes docs pull [URL]` | Crawl and cache a docs site |
@@ -101,17 +111,6 @@ Speaker identity comes from the channel, so no diarization is needed.
 Use headphones. With speakers, your microphone also picks up the client and attributes their
 words to you.
 
-To rehearse without a second person, run `scripts/mock_call.sh` in another terminal: a macOS
-voice speaks the CLIENT lines of `demo/mock_call.txt` into BlackHole and you read the ME lines
-into your microphone. Everything else is real (VAD, Whisper, Claude).
-
-### Test scenarios
-
-`uv run python scripts/make_synthetic.py` writes `data/synthetic/`. It contains replayable calls
-(nightly SFTP deltas, noisy transcription, a client who only negotiates, a one-word-answers
-client) together with the files those clients describe: a Spanish-locale loan tape with blank
-and inconsistent fields, out-of-order duplicate Stripe webhooks, and a contracts index with
-mixed file names. `data/synthetic/calls/EXPECTED.md` describes what a good panel shows for each.
 
 ## Configuration
 
@@ -170,13 +169,13 @@ restarts; *End call* always produces a report.
 src/fieldnotes/
   domain/     pure logic: turns, trigger rules, board merge, JSON parsing (no I/O)
   ports.py    Protocols for audio, transcription, turn sources and the model
-  adapters/   sounddevice, Silero VAD, mlx-whisper, Agent SDK, docs crawler, replay, fakes
+  adapters/   sounddevice, Silero VAD, mlx-whisper, Agent SDK, docs crawler
   app/        the Brain (prompt), the call pipeline, the FastAPI server, the CLI
   web/        the panel: one HTML page, plain JS and CSS, no build step
 ```
 
 Business logic depends only on the Protocols in `ports.py`, so every device and service can be
-replaced by a fake. Replay mode and the test suite rely on that.
+replaced by a fake; the tests use `tests/fakes.py`.
 
 ## Development
 
@@ -184,14 +183,11 @@ replaced by a fake. Replay mode and the test suite rely on that.
 uv sync --all-extras
 uv run pytest                                  # ~5 s; no model, no audio devices
 uv run ruff check . && uv run ruff format .
-uv run fieldnotes run --replay demo/mock_call.txt --fake-llm
 ```
 
 Contributions are welcome. Please open an issue first for larger changes, and keep the rules that
 make Fieldnotes trustworthy: no audio on disk, nothing sent automatically,
 and a time limit on anything that waits.
-
-[`docs/demo.md`](docs/demo.md) has a two-minute script for presenting Fieldnotes.
 
 ## Notes
 

@@ -1,4 +1,4 @@
-"""The whole pipeline over HTTP: replay -> trigger -> FakeLLM -> board -> SSE -> report."""
+"""The whole pipeline over HTTP: turns -> trigger -> model -> board -> SSE -> report."""
 
 import json
 import socket
@@ -7,9 +7,8 @@ import time
 
 import httpx
 import uvicorn
+from fakes import FakeLLM, TextSource
 
-from fieldnotes.adapters.fake_llm import FakeLLM
-from fieldnotes.adapters.replay import ReplaySource
 from fieldnotes.app.brain import Brain
 from fieldnotes.app.pipeline import CallSession
 from fieldnotes.app.server import create_app
@@ -29,11 +28,9 @@ def free_port() -> int:
         return s.getsockname()[1]
 
 
-def test_replay_streams_turns_board_and_report(tmp_path):
-    transcript = tmp_path / "call.txt"
-    transcript.write_text(CALL)
+def test_call_streams_turns_board_and_report(tmp_path):
     session = CallSession(
-        source=ReplaySource(transcript, speed=20),
+        source=TextSource(CALL, pause_s=0.2),
         brain=Brain(FakeLLM(delay_s=0.05)),
         docs_loader=lambda: "docs",
         calls_dir=tmp_path / "calls",
@@ -61,7 +58,7 @@ def test_replay_streams_turns_board_and_report(tmp_path):
             lines = stream.iter_lines()
             first = json.loads(next(lines).removeprefix("data: "))
             assert first["type"] == "snapshot" and first["started_at"]
-            seen = len(first["transcript"])  # replay starts with the server
+            seen = len(first["transcript"])  # turns start with the server
             sent_end = False
             for line in lines:
                 if not line.startswith("data: "):

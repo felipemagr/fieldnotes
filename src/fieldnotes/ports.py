@@ -23,7 +23,7 @@ class Transcriber(Protocol):
 
 
 class TurnSource(Protocol):
-    """Finished turns. Live audio (capture + VAD + transcription) and replay both are one.
+    """Finished turns: live audio (capture + VAD + transcription), or a test double.
 
     `on_activity` hears "transcribing" while speech is being turned into text.
     """

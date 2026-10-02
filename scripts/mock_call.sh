@@ -1,51 +1,48 @@
 #!/usr/bin/env bash
-# Play a mock call through the real audio path, no second person needed.
+# The demo: a mock client call through the real audio path.
 #
-# CLIENT lines are spoken by a macOS voice straight into BlackHole, as a call app would deliver
-# them. ME lines are shown for you to read into your mic; press Enter when you finish each one.
-# Start `uv run fieldnotes run --name mock` first, in another terminal.
+# A macOS voice plays the client. It speaks into BlackHole, as a call app would, and into your
+# headphones, so you hear the client. You read your lines into the mic and press Enter after
+# each one. Start `uv run fieldnotes run --name demo` in another terminal first. Headphones on:
+# with speakers, the mic hears the client too.
 #
-#   scripts/mock_call.sh [transcript]       default: demo/mock_call.txt
-#   scripts/mock_call.sh --hands-free       ME lines spoken through your speakers for the mic
-#                                           (no headphones, keep the room quiet)
+#   scripts/mock_call.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-HANDS_FREE=0
-FILE=demo/mock_call.txt
-for arg in "$@"; do
-  case "$arg" in
-    --hands-free) HANDS_FREE=1 ;;
-    -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
-    *) FILE="$arg" ;;
-  esac
-done
-
 DEVICE="${FIELDNOTES_CLIENT_DEVICE:-BlackHole 2ch}"
-CLIENT_VOICE="${CLIENT_VOICE:-Samantha}"
-ME_VOICE="${ME_VOICE:-Daniel}"
+VOICE="${CLIENT_VOICE:-Samantha}"
 say -a '?' | grep -q "$DEVICE" || { echo "Output device '$DEVICE' not found. Run ./install.sh."; exit 1; }
 
-echo "Playing $FILE. CLIENT speaks into '$DEVICE'."
+OUTPUT="$(system_profiler SPAudioDataType 2>/dev/null |
+  awk '/^        [^ ].*:$/ {name=$0} /Default Output Device: Yes/ {gsub(/^ +|:$/, "", name); print name}')"
+if [ "$OUTPUT" = "$DEVICE" ]; then
+  echo "Your Mac's sound output is $DEVICE, so you would not hear the client. Pick your headphones."
+  exit 1
+fi
+
+client() {
+  if [[ "$OUTPUT" == *Multi-Output* ]]; then
+    say -v "$VOICE" "$1"  # the Multi-Output Device already feeds both BlackHole and you
+  else
+    say -a "$DEVICE" -v "$VOICE" "$1" &  # same voice and rate on both outputs: in step
+    say -v "$VOICE" "$1"
+    wait
+  fi
+}
+
+echo "Mock call, client heard on: $OUTPUT. Your lines are in yellow: read, then press Enter."
 while IFS= read -r line || [ -n "$line" ]; do
   case "$line" in
     CLIENT:*)
-      text="${line#CLIENT:}"
-      printf '\033[1mCLIENT\033[0m%s\n' "$text"
-      say -a "$DEVICE" -v "$CLIENT_VOICE" "$text"
-      sleep 1.2  # a pause, so the end of the turn is detected
+      printf '\033[1mCLIENT\033[0m%s\n' "${line#CLIENT:}"
+      client "${line#CLIENT:}"
+      sleep 1  # a natural pause, so the end of the turn is detected
       ;;
     ME:*)
-      text="${line#ME:}"
-      if [ "$HANDS_FREE" = 1 ]; then
-        printf '\033[2mME%s\033[0m\n' "$text"
-        say -v "$ME_VOICE" "$text"
-        sleep 1.2
-      else
-        printf '\033[33mYOU, read aloud:\033[0m%s  ' "$text"
-        read -r _ </dev/tty
-      fi
+      printf '\033[33mYOU:\033[0m%s  ' "${line#ME:}"
+      read -r _ </dev/tty
       ;;
   esac
-done <"$FILE"
+done <demo/mock_call.txt
 echo "Done. Click End call in the panel for the report."

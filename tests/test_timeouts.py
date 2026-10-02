@@ -4,8 +4,8 @@ import asyncio
 import time
 
 import pytest
+from fakes import FakeLLM
 
-from fieldnotes.adapters.fake_llm import FakeLLM
 from fieldnotes.app import pipeline
 from fieldnotes.app.brain import Brain
 from fieldnotes.app.pipeline import ENDED, CallSession
