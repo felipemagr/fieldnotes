@@ -39,7 +39,7 @@ def refuse_api_key() -> None:
 
 
 class ClaudeAgentSDKLLM:
-    def __init__(self, model: str = "haiku"):
+    def __init__(self, model: str = "sonnet"):
         refuse_api_key()
         self.model = model
         self._client: ClaudeSDKClient | None = None

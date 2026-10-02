@@ -83,7 +83,7 @@ def docs_pull(
 @app.command()
 def run(
     name: Annotated[str, typer.Option(help="Call name, used in the report file name")] = "call",
-    model: Annotated[str | None, typer.Option(help="haiku or sonnet")] = None,
+    model: Annotated[str | None, typer.Option(help="sonnet or haiku")] = None,
     docs_url: Annotated[str | None, typer.Option()] = None,
     port: Annotated[int | None, typer.Option()] = None,
     open_browser: Annotated[bool, typer.Option("--open/--no-open")] = True,

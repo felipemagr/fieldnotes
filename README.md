@@ -129,7 +129,7 @@ Settings are read from the environment or a `.env` file, prefixed with `FIELDNOT
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `FIELDNOTES_MODEL` | `haiku` | Live board: `haiku` is fast; `sonnet` is slower and stronger |
+| `FIELDNOTES_MODEL` | `sonnet` | Live board: `sonnet` (~5 s to screen); `haiku` is faster (~3.5 s) and weaker |
 | `FIELDNOTES_REPORT_MODEL` | `opus` | Post-call report; falls back to the live model on failure |
 | `FIELDNOTES_TEAMS_FILE` | `src/fieldnotes/teams.md` | Who owns what: how items are routed |
 | `FIELDNOTES_DOCS_URL` | `https://docs.fence.finance/` | Docs to ground suggestions in |
