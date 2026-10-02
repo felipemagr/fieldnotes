@@ -5,7 +5,7 @@ from typing import Protocol
 
 import numpy as np
 
-from earpiece.domain.turn import Speaker, Turn
+from fieldnotes.domain.turn import Speaker, Turn
 
 
 class AudioSource(Protocol):

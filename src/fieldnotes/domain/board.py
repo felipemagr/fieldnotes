@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from earpiece.domain.suggestion import Mapping, Suggestion
+from fieldnotes.domain.suggestion import Mapping, Suggestion
 
 Section = Literal["needs", "mapping", "ask", "ops", "risks"]
 SECTIONS: tuple[Section, ...] = ("needs", "mapping", "ask", "ops", "risks")

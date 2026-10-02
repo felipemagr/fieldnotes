@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from earpiece.app.pipeline import CallSession
+from fieldnotes.app.pipeline import CallSession
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 KEEPALIVE_S = 15.0
@@ -24,10 +24,11 @@ def create_app(session: CallSession) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         session.start_preparing()
+        session.start_listening()
         yield
         await session.close()
 
-    app = FastAPI(title="Earpiece", lifespan=lifespan)
+    app = FastAPI(title="Fieldnotes", lifespan=lifespan)
     app.mount("/static", StaticFiles(directory=WEB), name="static")
 
     @app.get("/")
@@ -59,11 +60,6 @@ def create_app(session: CallSession) -> FastAPI:
     @app.get("/api/state")
     async def state() -> dict:
         return session.snapshot()
-
-    @app.post("/api/consent")
-    async def consent() -> dict:
-        session.give_consent()
-        return {"consent_at": session.consent_at.isoformat()}
 
     @app.post("/api/items/{item_id}/pin")
     async def pin(item_id: int, pinned: bool = True) -> dict:

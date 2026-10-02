@@ -1,4 +1,4 @@
-"""Runtime settings, read from the environment (prefix `EARPIECE_`) or `.env`."""
+"""Runtime settings, read from the environment (prefix `FIELDNOTES_`) or `.env`."""
 
 from functools import lru_cache
 from pathlib import Path
@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="EARPIECE_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="FIELDNOTES_", env_file=".env", extra="ignore")
 
     # Brain
     model: str = "haiku"

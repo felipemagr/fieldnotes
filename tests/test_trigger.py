@@ -1,5 +1,5 @@
-from earpiece.domain.trigger import TurnTrigger, is_question
-from earpiece.domain.turn import Turn
+from fieldnotes.domain.trigger import TurnTrigger, is_question
+from fieldnotes.domain.turn import Turn
 
 
 def turn(speaker, text):

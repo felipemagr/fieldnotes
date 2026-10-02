@@ -6,9 +6,9 @@ import time
 
 from pydantic import ValidationError
 
-from earpiece.domain.suggestion import Suggestion, parse_suggestion
-from earpiece.domain.turn import Turn
-from earpiece.ports import LLM
+from fieldnotes.domain.suggestion import Suggestion, parse_suggestion
+from fieldnotes.domain.turn import Turn
+from fieldnotes.ports import LLM
 
 logger = logging.getLogger(__name__)
 

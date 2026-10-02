@@ -217,7 +217,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Earpiece: crawled docs, synthetic test data, call records. Never committed.
+# Fieldnotes: crawled docs, synthetic test data, call records. Never committed.
 data/
 calls/
 

@@ -1,5 +1,5 @@
 [project]
-name = "earpiece"
+name = "fieldnotes"
 version = "0.1.0"
 description = "Local call assistant for engineers who integrate client data: on-device transcription, API-grounded suggestions and post-call reports."
 readme = "README.md"
@@ -25,7 +25,7 @@ audio = [
 ]
 
 [project.scripts]
-earpiece = "earpiece.app.cli:app"
+fieldnotes = "fieldnotes.app.cli:app"
 
 [dependency-groups]
 dev = ["pytest", "pytest-asyncio", "pytest-timeout", "ruff"]
@@ -35,7 +35,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/earpiece"]
+packages = ["src/fieldnotes"]
 
 [tool.ruff]
 line-length = 100

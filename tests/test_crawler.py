@@ -1,6 +1,6 @@
 import httpx
 
-from earpiece.adapters.docs_crawler import DocsLibrary, crawl
+from fieldnotes.adapters.docs_crawler import DocsLibrary, crawl
 
 ROBOTS = "User-agent: *\nDisallow: /private/\n"
 

@@ -18,11 +18,11 @@ from bs4 import BeautifulSoup
 from markdownify import markdownify
 from pydantic import BaseModel
 
-from earpiece.adapters.cache import JsonCache
+from fieldnotes.adapters.cache import JsonCache
 
 logger = logging.getLogger(__name__)
 
-USER_AGENT = "earpiece-docs-crawler/0.1 (+local, personal use)"
+USER_AGENT = "fieldnotes-docs-crawler/0.1 (+local, personal use)"
 SKIP_EXTENSIONS = re.compile(
     r"\.(png|jpe?g|gif|svg|ico|css|js|json|pdf|zip|woff2?|ttf|mp4|webp)$", re.IGNORECASE
 )

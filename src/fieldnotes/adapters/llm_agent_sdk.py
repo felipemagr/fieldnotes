@@ -23,7 +23,7 @@ from claude_agent_sdk import (
 logger = logging.getLogger(__name__)
 
 API_KEY_MESSAGE = (
-    "ANTHROPIC_API_KEY is set in the environment. Earpiece runs on your Claude subscription "
+    "ANTHROPIC_API_KEY is set in the environment. Fieldnotes runs on your Claude subscription "
     "through the Claude Code login, and with that variable set the Agent SDK would bill API "
     "credits instead. Unset it (`unset ANTHROPIC_API_KEY`) and run again."
 )
@@ -48,7 +48,7 @@ class ClaudeAgentSDKLLM:
         self._lock = asyncio.Lock()
         self._closing: set[asyncio.Task] = set()
         # An empty working directory: nothing from this repo leaks into the session.
-        self._cwd = tempfile.mkdtemp(prefix="earpiece-")
+        self._cwd = tempfile.mkdtemp(prefix="fieldnotes-")
 
     async def start(self, system_prompt: str, context: str) -> None:
         options = ClaudeAgentOptions(

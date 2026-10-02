@@ -7,7 +7,7 @@ import logging
 import time
 from pathlib import Path
 
-from earpiece.domain.turn import Turn
+from fieldnotes.domain.turn import Turn
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,7 @@ const EMPTY = {
   risks: "No risks spotted yet.",
 };
 
-let state = { state: "connecting", consent_at: null, brain_ready: false, report: null };
+let state = { state: "connecting", report: null };
 const elements = new Map(); // item id -> <li>
 
 // ---- top bar --------------------------------------------------------------------------
@@ -20,14 +20,7 @@ function renderState() {
   $("state-text").textContent = shown;
   $("latency").textContent = state.latency_s != null ? `last update ${state.latency_s.toFixed(1)} s` : "";
   $("model").textContent = state.model ? `model ${state.model}` : "";
-  const live = state.consent_at && !["writing report", "ended"].includes(state.state);
-  $("end").disabled = !live;
-  $("consent").hidden = Boolean(state.consent_at);
-  $("layout").hidden = !state.consent_at;
-  $("agree").disabled = Boolean(state.consent_at);
-  $("brain-hint").textContent = state.brain_ready
-    ? "The docs are loaded. Ready when you are."
-    : "Loading the docs into the model…";
+  $("end").disabled = ["connecting", "writing report", "ended"].includes(state.state);
 }
 
 function showError(message) {
@@ -242,9 +235,6 @@ function handle(event) {
       state.state = event.state;
       if (event.latency_s != null) state.latency_s = event.latency_s;
       break;
-    case "brain_ready":
-      state.brain_ready = true;
-      break;
     case "turn":
       addTurn(event.turn);
       break;
@@ -269,13 +259,11 @@ function connect() {
   source.onmessage = (message) => handle(JSON.parse(message.data));
   source.onopen = () => { if (state.error?.startsWith("Lost")) showError(null); };
   source.onerror = () => {
-    showError("Lost the connection to Earpiece, retrying…");
+    showError("Lost the connection to Fieldnotes, retrying…");
     $("state").dataset.state = "error";
   };
 }
 
-$("agree").addEventListener("click", () => post("/api/consent"));
-$("copy-consent").addEventListener("click", (e) => copy($("consent-script").textContent, e.currentTarget));
 $("copy-report").addEventListener("click", (e) => copy(state.report || "", e.currentTarget));
 $("end").addEventListener("click", () => {
   $("end").disabled = true;

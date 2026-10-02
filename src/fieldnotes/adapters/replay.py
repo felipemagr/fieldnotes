@@ -9,7 +9,7 @@ import time
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 
-from earpiece.domain.turn import Speaker, Turn
+from fieldnotes.domain.turn import Speaker, Turn
 
 WORDS_PER_SECOND = 2.6
 PAUSE_S = 0.8

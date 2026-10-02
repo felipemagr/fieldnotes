@@ -10,9 +10,9 @@ import time
 from collections.abc import AsyncIterator, Callable
 from concurrent.futures import ThreadPoolExecutor
 
-from earpiece.adapters.vad_silero import Segmenter, Utterance
-from earpiece.domain.turn import Speaker, Turn
-from earpiece.ports import AudioSource, Transcriber
+from fieldnotes.adapters.vad_silero import Segmenter, Utterance
+from fieldnotes.domain.turn import Speaker, Turn
+from fieldnotes.ports import AudioSource, Transcriber
 
 logger = logging.getLogger(__name__)
 

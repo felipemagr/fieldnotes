@@ -1,11 +1,10 @@
 # Two-minute demo
 
-A script for showing Earpiece on a screen share, using the mock call in `demo/`.
+A script for showing Fieldnotes on a screen share, using the mock call in `demo/`.
 
-1. **(15 s)** "On client calls, I spend half my head on notes. Earpiece listens, locally, and
-   keeps the integration map for me." Show the consent screen: "Nothing starts until everyone
-   agrees. Audio is never stored."
-2. **(15 s)** Click agree. Run `earpiece run --replay demo/mock_call.txt --speed 1.5` (or a
+1. **(15 s)** "On client calls, I spend half my head on notes. Fieldnotes listens, locally, and
+   keeps the integration map for me. Audio is never stored."
+2. **(15 s)** Run `fieldnotes run --replay demo/mock_call.txt --speed 1.5` (or a
    friend on a live call). Transcript fills the left column.
 3. **(45 s)** As the client describes the Excel tape, point at **How it maps**: `POST
    /v2/declarations` with a link to the docs section, and dry_run before the real run. Stripe

@@ -1,6 +1,6 @@
 import numpy as np
 
-from earpiece.adapters.vad_silero import FRAME, Segmenter
+from fieldnotes.adapters.vad_silero import FRAME, Segmenter
 
 
 def fake_prob(frame):

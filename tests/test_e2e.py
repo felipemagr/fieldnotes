@@ -8,12 +8,12 @@ import time
 import httpx
 import uvicorn
 
-from earpiece.adapters.fake_llm import FakeLLM
-from earpiece.adapters.replay import ReplaySource
-from earpiece.app.brain import Brain
-from earpiece.app.pipeline import CallSession
-from earpiece.app.server import create_app
-from earpiece.domain.trigger import TurnTrigger
+from fieldnotes.adapters.fake_llm import FakeLLM
+from fieldnotes.adapters.replay import ReplaySource
+from fieldnotes.app.brain import Brain
+from fieldnotes.app.pipeline import CallSession
+from fieldnotes.app.server import create_app
+from fieldnotes.domain.trigger import TurnTrigger
 
 CALL = """\
 ME: Thanks for joining.
@@ -33,7 +33,7 @@ def test_replay_streams_turns_board_and_report(tmp_path):
     transcript = tmp_path / "call.txt"
     transcript.write_text(CALL)
     session = CallSession(
-        source=ReplaySource(transcript, speed=50),
+        source=ReplaySource(transcript, speed=20),
         brain=Brain(FakeLLM(delay_s=0.05)),
         docs_loader=lambda: "docs",
         calls_dir=tmp_path / "calls",
@@ -60,8 +60,8 @@ def test_replay_streams_turns_board_and_report(tmp_path):
         with httpx.stream("GET", f"{base}/events", timeout=10) as stream:
             lines = stream.iter_lines()
             first = json.loads(next(lines).removeprefix("data: "))
-            assert first["type"] == "snapshot" and first["state"] == "waiting for consent"
-            assert httpx.post(f"{base}/api/consent").status_code == 200
+            assert first["type"] == "snapshot" and first["started_at"]
+            seen = len(first["transcript"])  # replay starts with the server
             sent_end = False
             for line in lines:
                 if not line.startswith("data: "):
@@ -69,7 +69,7 @@ def test_replay_streams_turns_board_and_report(tmp_path):
                 event = json.loads(line.removeprefix("data: "))
                 events.append(event)
                 turns = [e for e in events if e["type"] == "turn"]
-                if len(turns) == 4 and not sent_end:
+                if seen + len(turns) == 4 and not sent_end:
                     time.sleep(0.3)  # let the last update land
                     httpx.post(f"{base}/api/end")
                     sent_end = True
@@ -77,16 +77,16 @@ def test_replay_streams_turns_board_and_report(tmp_path):
                     break
 
         kinds = [e["type"] for e in events]
-        assert kinds.count("turn") == 4
+        assert seen + kinds.count("turn") == 4
         assert "board" in kinds
         board = next(e for e in events if e["type"] == "board")["board"]
         assert board["sections"]["needs"]
         report = next(e for e in events if e["type"] == "report")
-        assert "Consent given:" in report["report"]
+        assert "Started:" in report["report"]
         saved = (tmp_path / "calls").glob("*-e2e-test.md")
         assert len(list(saved)) == 1
         record = json.loads(next((tmp_path / "calls").glob("*.call.json")).read_text())
-        assert record["consent_at"] and record["audio_stored"] is False
+        assert record["started_at"] and record["audio_stored"] is False
 
         # pin and dismiss go through the API
         item = board["sections"]["needs"][0]["id"]
@@ -98,16 +98,3 @@ def test_replay_streams_turns_board_and_report(tmp_path):
     finally:
         server.should_exit = True
         thread.join(timeout=5)
-
-
-def test_nothing_is_transcribed_before_consent(tmp_path):
-    transcript = tmp_path / "call.txt"
-    transcript.write_text(CALL)
-    session = CallSession(
-        source=ReplaySource(transcript, speed=100),
-        brain=Brain(FakeLLM(delay_s=0)),
-        docs_loader=lambda: "",
-        calls_dir=tmp_path,
-    )
-    assert session.snapshot()["transcript"] == []
-    assert session.consent_at is None

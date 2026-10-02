@@ -1,6 +1,6 @@
 import pytest
 
-from earpiece.domain.suggestion import parse_suggestion
+from fieldnotes.domain.suggestion import parse_suggestion
 
 GOOD = '{"client_needs": ["Excel tape"], "fence_mapping": [{"need": "tape", "approach": "adapter", "endpoint": "POST /v2/declarations", "doc_ref": null}], "questions_to_ask": [], "route_to_ops": [], "risks": []}'
 

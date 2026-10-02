@@ -11,7 +11,7 @@ from collections.abc import AsyncIterator
 import numpy as np
 import sounddevice as sd
 
-from earpiece.domain.turn import Speaker
+from fieldnotes.domain.turn import Speaker
 
 logger = logging.getLogger(__name__)
 

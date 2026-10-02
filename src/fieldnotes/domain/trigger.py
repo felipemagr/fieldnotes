@@ -7,7 +7,7 @@ in the next batch, so requests never pile up. Two requests never start closer th
 
 import re
 
-from earpiece.domain.turn import Turn
+from fieldnotes.domain.turn import Turn
 
 QUESTION_START = re.compile(
     r"^(can|could|would|will|do|does|did|is|are|how|what|when|where|which|who|why|should)\b",

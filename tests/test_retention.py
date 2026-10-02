@@ -1,8 +1,8 @@
 import os
 import time
 
-from earpiece.adapters.store import TRANSCRIPT_SUFFIX, TranscriptStore, cleanup
-from earpiece.domain.turn import Turn
+from fieldnotes.adapters.store import TRANSCRIPT_SUFFIX, TranscriptStore, cleanup
+from fieldnotes.domain.turn import Turn
 
 
 def test_cleanup_deletes_only_old_transcripts(tmp_path):

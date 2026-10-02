@@ -10,18 +10,18 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from earpiece.adapters.cache import slug
-from earpiece.adapters.store import TRANSCRIPT_SUFFIX, TranscriptStore
-from earpiece.app.brain import Brain
-from earpiece.domain.board import Board
-from earpiece.domain.trigger import TurnTrigger
-from earpiece.domain.turn import Turn
-from earpiece.ports import TurnSource
+from fieldnotes.adapters.cache import slug
+from fieldnotes.adapters.store import TRANSCRIPT_SUFFIX, TranscriptStore
+from fieldnotes.app.brain import Brain
+from fieldnotes.domain.board import Board
+from fieldnotes.domain.trigger import TurnTrigger
+from fieldnotes.domain.turn import Turn
+from fieldnotes.ports import TurnSource
 
 logger = logging.getLogger(__name__)
 
 # States shown in the top bar.
-WAITING_CONSENT = "waiting for consent"
+STARTING = "starting"
 LISTENING = "listening"
 TRANSCRIBING = "transcribing"
 THINKING = "thinking"
@@ -81,10 +81,10 @@ class CallSession:
         self.store = TranscriptStore(
             calls_dir / f"{self.call_id}{TRANSCRIPT_SUFFIX}" if keep_transcripts else None
         )
-        self.state = WAITING_CONSENT
+        self.state = STARTING
         self.error: str | None = None
         self.brain_ready = asyncio.Event()
-        self.consent_at: datetime | None = None
+        self.started_at: datetime | None = None
         self.report: str | None = None
         self.report_path: Path | None = None
         self.last_latency_s: float | None = None
@@ -106,7 +106,7 @@ class CallSession:
             "model": self.brain.model,
             "brain_ready": self.brain_ready.is_set(),
             "latency_s": self.last_latency_s,
-            "consent_at": self.consent_at.isoformat() if self.consent_at else None,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
             "transcript": [t.model_dump() for t in self.store.all()],
             "board": self.board.snapshot(),
             "report": self.report,
@@ -135,7 +135,7 @@ class CallSession:
         self._prepare_task = self.spawn(self.prepare())
 
     async def prepare(self) -> None:
-        """Load the docs into the Brain while the consent screen is up."""
+        """Load the docs into the Brain. Turns that arrive meanwhile wait for it."""
         try:
             docs = await asyncio.wait_for(
                 asyncio.to_thread(self.docs_loader), self.docs_timeout_s + DOCS_GRACE_S
@@ -150,15 +150,13 @@ class CallSession:
             self._set_error(f"Brain failed to start: {e}")
             return
         self.brain_ready.set()
-        self.bus.publish({"type": "brain_ready"})
         self._kick()  # turns may have armed the trigger while the docs were loading
 
-    def give_consent(self) -> None:
-        """Participants were told and agreed. Only now does transcription start."""
-        if self.consent_at is not None or self.state != WAITING_CONSENT:
+    def start_listening(self) -> None:
+        if self.state != STARTING:
             return
-        self.consent_at = datetime.now().astimezone()
-        logger.info("Consent given at %s", self.consent_at.isoformat())
+        self.started_at = datetime.now().astimezone()
+        logger.info("Listening since %s", self.started_at.isoformat())
         self._write_record()
         self._set_state(LISTENING)
         self._listen_task = self.spawn(self._listen())
@@ -306,11 +304,11 @@ class CallSession:
     # ---- records ------------------------------------------------------------------------
 
     def _header(self) -> str:
-        consent = self.consent_at.strftime("%Y-%m-%d %H:%M:%S %Z") if self.consent_at else "none"
+        started = self.started_at.strftime("%Y-%m-%d %H:%M %Z") if self.started_at else "never"
         return (
             f"# Call report: {self.name}\n\n"
             f"- Date: {datetime.now():%Y-%m-%d %H:%M}\n"
-            f"- Consent given: {consent}\n"
+            f"- Started: {started}\n"
             f"- Model: {self.brain.model}\n\n"
         )
 
@@ -326,12 +324,12 @@ class CallSession:
         return path
 
     def _write_record(self) -> None:
-        """The call record: when consent was given, no transcript content."""
+        """The call record: when it started, no transcript content."""
         self.calls_dir.mkdir(parents=True, exist_ok=True)
         record = {
             "call_id": self.call_id,
             "name": self.name,
-            "consent_at": self.consent_at.isoformat() if self.consent_at else None,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
             "model": self.brain.model,
             "report": str(self.report_path) if self.report_path else None,
             "transcript_kept": self.store.path is not None,

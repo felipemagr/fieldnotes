@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Earpiece</title>
+  <title>Fieldnotes</title>
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/app.js" defer></script>
 </head>
 <body>
   <header class="topbar">
-    <span class="brand">Earpiece</span>
+    <span class="brand">Fieldnotes</span>
     <span class="state" id="state"><i class="dot"></i><span id="state-text">connecting</span></span>
     <span class="meta" id="latency" title="Client stopped talking to suggestions on screen"></span>
     <span class="meta" id="model"></span>
@@ -18,20 +18,7 @@
     <button class="end" id="end" type="button" disabled>End call</button>
   </header>
 
-  <section class="consent" id="consent" hidden>
-    <div class="consent-body">
-      <h1>Before we start</h1>
-      <p class="lead">Transcription starts only after everyone on the call has been told and agreed. Read this aloud, or paste it in the chat:</p>
-      <blockquote id="consent-script">I use a local tool that transcribes this call to help me take notes. Audio isn't stored and the transcript is only used for follow-up. Is that OK with everyone?</blockquote>
-      <div class="actions">
-        <button type="button" class="quiet" id="copy-consent">Copy chat message</button>
-        <button type="button" class="primary" id="agree">Participants informed and agreed</button>
-      </div>
-      <p class="hint" id="brain-hint">Loading the docs into the model…</p>
-    </div>
-  </section>
-
-  <main class="layout" id="layout" hidden>
+  <main class="layout" id="layout">
     <aside class="transcript" aria-label="Transcript">
       <h2>Transcript</h2>
       <ol id="turns"></ol>

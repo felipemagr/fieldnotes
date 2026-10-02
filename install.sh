@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install everything Earpiece needs on a Mac with Apple Silicon. Safe to run again.
+# Install everything Fieldnotes needs on a Mac with Apple Silicon. Safe to run again.
 #
 #   ./install.sh              everything, asks before the big download and the audio driver
 #   ./install.sh --yes        everything, no questions
@@ -29,14 +29,14 @@ ask() {  # ask "question" -> 0 for yes
 }
 
 bold "1/7 This Mac"
-[ "$(uname -s)" = "Darwin" ] || fail "Earpiece runs on macOS."
+[ "$(uname -s)" = "Darwin" ] || fail "Fieldnotes runs on macOS."
 if [ "$(uname -m)" = "arm64" ]; then ok "Apple Silicon"
 else
   warn "Not Apple Silicon: mlx-whisper (live audio) will not run. Continuing without audio."
   AUDIO=0
 fi
 if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
-  fail "ANTHROPIC_API_KEY is set: Earpiece would bill API credits. Run: unset ANTHROPIC_API_KEY"
+  fail "ANTHROPIC_API_KEY is set: Fieldnotes would bill API credits. Run: unset ANTHROPIC_API_KEY"
 fi
 ok "ANTHROPIC_API_KEY not set"
 
@@ -72,13 +72,13 @@ if [ "$method" = "claude.ai" ]; then ok "logged in with Claude.ai (subscription,
 else warn "logged in with '$method', not Claude.ai: that may bill API credits."; fi
 
 bold "5/7 API docs"
-uv run earpiece docs pull --no-force | sed 's/^/  /'
+uv run fieldnotes docs pull --no-force | sed 's/^/  /'
 
 bold "6/7 Live audio"
 if [ "$AUDIO" = 0 ]; then
-  warn "skipped (--no-audio). Replay still works: earpiece run --replay demo/mock_call.txt"
+  warn "skipped (--no-audio). Replay still works: fieldnotes run --replay demo/mock_call.txt"
 else
-  if uv run earpiece devices 2>/dev/null | grep -q "client channel"; then
+  if uv run fieldnotes devices 2>/dev/null | grep -q "client channel"; then
     ok "BlackHole 2ch found"
   elif ask "Install the BlackHole 2ch audio driver? (asks for your Mac password)"; then
     brew install --cask blackhole-2ch
@@ -87,14 +87,14 @@ else
   else
     warn "BlackHole skipped: live calls need it (brew install --cask blackhole-2ch)."
   fi
-  model="$(uv run python -c 'from earpiece.settings import get_settings; print(get_settings().whisper_model)')"
+  model="$(uv run python -c 'from fieldnotes.settings import get_settings; print(get_settings().whisper_model)')"
   cache="$HOME/.cache/huggingface/hub/models--${model//\//--}"
   if [ -d "$cache" ]; then
     ok "Whisper model already downloaded ($model)"
   elif ask "Download the Whisper model $model now (about 1.6 GB)?"; then
     uv run python -c '
-from earpiece.adapters.stt_mlx_whisper import MlxWhisperTranscriber
-from earpiece.settings import get_settings
+from fieldnotes.adapters.stt_mlx_whisper import MlxWhisperTranscriber
+from fieldnotes.settings import get_settings
 s = get_settings()
 MlxWhisperTranscriber(s.whisper_model, s.language).warm_up()'
     ok "Whisper model ready"
@@ -105,15 +105,15 @@ fi
 
 bold "7/7 Check"
 uv run python scripts/make_synthetic.py >/dev/null && ok "synthetic test data in data/synthetic/"
-if uv run pytest -q >/tmp/earpiece-tests.log 2>&1; then
-  ok "tests pass ($(tail -1 /tmp/earpiece-tests.log))"
+if uv run pytest -q >/tmp/fieldnotes-tests.log 2>&1; then
+  ok "tests pass ($(tail -1 /tmp/fieldnotes-tests.log))"
 else
-  fail "tests failed, see /tmp/earpiece-tests.log"
+  fail "tests failed, see /tmp/fieldnotes-tests.log"
 fi
 
 bold "Ready"
 cat <<'EOF'
-  Try it:     uv run earpiece run --replay demo/mock_call.txt
-  No model:   uv run earpiece run --replay demo/mock_call.txt --fake-llm
-  Live call:  uv run earpiece check-audio, then uv run earpiece run --name "client name"
+  Try it:     uv run fieldnotes run --replay demo/mock_call.txt
+  No model:   uv run fieldnotes run --replay demo/mock_call.txt --fake-llm
+  Live call:  uv run fieldnotes check-audio, then uv run fieldnotes run --name "client name"
 EOF

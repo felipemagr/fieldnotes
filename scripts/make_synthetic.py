@@ -2,11 +2,11 @@
 
     uv run python scripts/make_synthetic.py
 
-calls/      transcripts to replay (`earpiece run --replay data/synthetic/calls/<file>`), each a
+calls/      transcripts to replay (`fieldnotes run --replay data/synthetic/calls/<file>`), each a
             situation the panel must handle; EXPECTED.md says what a good panel shows for each.
 artifacts/  the files those clients talk about: a Spanish-locale loan tape with the traps the call
             mentions, Stripe webhook events with duplicates and out-of-order delivery, a contracts
-            index with mixed file names. For building and testing adapters, not read by Earpiece.
+            index with mixed file names. For building and testing adapters, not read by Fieldnotes.
 """
 
 import csv

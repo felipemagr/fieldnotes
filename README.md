@@ -1,6 +1,6 @@
-# Earpiece
+# Fieldnotes
 
-**A local call assistant for engineers who integrate client data.** Earpiece listens to a live
+**A local call assistant for engineers who integrate client data.** Fieldnotes listens to a live
 client call on your Mac, transcribes it on-device, and keeps a live board of what the client
 needs, how each need maps to your platform's API, and what to ask next. When the call ends it
 writes a report with an integration plan and a draft follow-up email.
@@ -23,7 +23,7 @@ writes a report with an integration plan and a draft follow-up email.
 
 Forward deployed and solutions engineers spend client calls working out how messy data (Excel
 loan tapes, nightly SFTP files, webhooks) fits a platform's API, while also taking notes and
-thinking of the next question. Earpiece does the bookkeeping:
+thinking of the next question. Fieldnotes does the bookkeeping:
 
 - **Grounded in your docs.** It crawls the platform's API documentation once. Every mapping
   names a documented endpoint and links to the section it came from, or says "not in docs, ask".
@@ -38,14 +38,12 @@ thinking of the next question. Earpiece does the bookkeeping:
 
 - **Local audio.** Capture, voice detection and speech-to-text run on your Mac. Audio is never
   written to disk.
-- **Consent first.** Nothing is transcribed until you click *Participants informed and agreed*.
-  The consent time is recorded with the call.
 - **Short retention.** Transcripts stay in memory unless you opt in to keeping them, and kept
   transcripts are deleted after 7 days.
-- **Nothing goes out.** The report and the email are drafts for you to edit. Earpiece never
+- **Nothing goes out.** The report and the email are drafts for you to edit. Fieldnotes never
   sends anything to the client.
 - **No extra cost.** The model runs through the Claude Agent SDK on your existing Claude Code
-  login. Earpiece refuses to start if `ANTHROPIC_API_KEY` is set, so it can never bill API
+  login. Fieldnotes refuses to start if `ANTHROPIC_API_KEY` is set, so it can never bill API
   credits by accident.
 
 ## Requirements
@@ -61,7 +59,7 @@ thinking of the next question. Earpiece does the bookkeeping:
 ```sh
 git clone git@github.com:felipemagr/fieldnotes.git && cd fieldnotes
 ./install.sh
-uv run earpiece run --replay demo/mock_call.txt
+uv run fieldnotes run --replay demo/mock_call.txt
 ```
 
 `install.sh` checks the Mac, installs `uv` and the Python dependencies, and verifies that Claude
@@ -69,27 +67,26 @@ is logged in with a Claude.ai account rather than an API key. It also pulls the 
 to install BlackHole and download the Whisper model (~1.6 GB), and finishes by running the
 tests. It is safe to run again. Use `./install.sh --no-audio` to skip the audio stack.
 
-The panel opens at <http://127.0.0.1:8765>. Click *Participants informed and agreed* and the
-mock call starts playing.
+The panel opens at <http://127.0.0.1:8765> and the mock call starts playing.
 
 ## Usage
 
 | Command | What it does |
 |---|---|
-| `earpiece run` | Live call: mic and call audio, transcription, live panel |
-| `earpiece run --replay FILE` | Play a transcript at speaking pace instead of live audio |
-| `earpiece run --fake-llm` | Canned answers, no model calls (UI work, offline demos) |
-| `earpiece run --name "acme"` | Name the call (used in the report file name) |
-| `earpiece run --refresh-docs` | Re-crawl the docs before the call |
-| `earpiece docs pull [URL]` | Crawl and cache a docs site |
-| `earpiece devices` | List audio inputs and show which one is the client channel |
-| `earpiece check-audio` | Live level meters for both channels |
+| `fieldnotes run` | Live call: mic and call audio, transcription, live panel |
+| `fieldnotes run --replay FILE` | Play a transcript at speaking pace instead of live audio |
+| `fieldnotes run --fake-llm` | Canned answers, no model calls (UI work, offline demos) |
+| `fieldnotes run --name "acme"` | Name the call (used in the report file name) |
+| `fieldnotes run --refresh-docs` | Re-crawl the docs before the call |
+| `fieldnotes docs pull [URL]` | Crawl and cache a docs site |
+| `fieldnotes devices` | List audio inputs and show which one is the client channel |
+| `fieldnotes check-audio` | Live level meters for both channels |
 
 Prefix commands with `uv run`, or activate `.venv`.
 
 ### Live call setup
 
-Earpiece hears two channels: your microphone is **ME** and the call app's output is **CLIENT**.
+Fieldnotes hears two channels: your microphone is **ME** and the call app's output is **CLIENT**.
 Speaker identity comes from the channel, so no diarization is needed.
 
 1. Install BlackHole (`./install.sh` offers it, or `brew install --cask blackhole-2ch`).
@@ -98,8 +95,8 @@ Speaker identity comes from the channel, so no diarization is needed.
    BlackHole.
 3. In the call app (Meet, Zoom, Teams), set the **speaker** to the Multi-Output Device. You still
    hear the call, and BlackHole receives a copy. Leave the microphone unchanged.
-4. Run `uv run earpiece check-audio`. Both meters should move.
-5. Start the call with `uv run earpiece run --name "client name"`.
+4. Run `uv run fieldnotes check-audio`. Both meters should move.
+5. Start the call with `uv run fieldnotes run --name "client name"`.
 
 Use headphones. With speakers, your microphone also picks up the client and attributes their
 words to you.
@@ -114,26 +111,26 @@ mixed file names. `data/synthetic/calls/EXPECTED.md` describes what a good panel
 
 ## Configuration
 
-Settings are read from the environment or a `.env` file, prefixed with `EARPIECE_`. See
+Settings are read from the environment or a `.env` file, prefixed with `FIELDNOTES_`. See
 [`.env.example`](.env.example) for the full list.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `EARPIECE_MODEL` | `haiku` | `haiku` is fast; `sonnet` is slower and stronger |
-| `EARPIECE_DOCS_URL` | `https://docs.fence.finance/` | Docs to ground suggestions in |
-| `EARPIECE_DOCS_TTL_DAYS` | `7` | Re-crawl the docs after this many days |
-| `EARPIECE_CLIENT_DEVICE` | `BlackHole 2ch` | Input that carries the call audio |
-| `EARPIECE_MIC_DEVICE` | system default | Your microphone |
-| `EARPIECE_END_OF_TURN_MS` | `700` | Silence that ends a turn |
-| `EARPIECE_LANGUAGE` | `en` | Speech-to-text language hint |
-| `EARPIECE_TRIGGER_MIN_WORDS` | `15` | Client turn length that triggers an update |
-| `EARPIECE_LLM_TIMEOUT_S` | `30` | Time limit per model call |
-| `EARPIECE_KEEP_TRANSCRIPTS` | `false` | Keep transcripts on disk |
-| `EARPIECE_RETENTION_DAYS` | `7` | Delete kept transcripts after this many days |
+| `FIELDNOTES_MODEL` | `haiku` | `haiku` is fast; `sonnet` is slower and stronger |
+| `FIELDNOTES_DOCS_URL` | `https://docs.fence.finance/` | Docs to ground suggestions in |
+| `FIELDNOTES_DOCS_TTL_DAYS` | `7` | Re-crawl the docs after this many days |
+| `FIELDNOTES_CLIENT_DEVICE` | `BlackHole 2ch` | Input that carries the call audio |
+| `FIELDNOTES_MIC_DEVICE` | system default | Your microphone |
+| `FIELDNOTES_END_OF_TURN_MS` | `700` | Silence that ends a turn |
+| `FIELDNOTES_LANGUAGE` | `en` | Speech-to-text language hint |
+| `FIELDNOTES_TRIGGER_MIN_WORDS` | `15` | Client turn length that triggers an update |
+| `FIELDNOTES_LLM_TIMEOUT_S` | `30` | Time limit per model call |
+| `FIELDNOTES_KEEP_TRANSCRIPTS` | `false` | Keep transcripts on disk |
+| `FIELDNOTES_RETENTION_DAYS` | `7` | Delete kept transcripts after this many days |
 
-Earpiece was built against [Fence's API docs](https://docs.fence.finance/), but it works with any
-documentation site: run `earpiece docs pull https://docs.example.com/` and set
-`EARPIECE_DOCS_URL`. The prompt in `src/earpiece/app/brain.py` carries the domain hints (asset-backed
+Fieldnotes was built against [Fence's API docs](https://docs.fence.finance/), but it works with any
+documentation site: run `fieldnotes docs pull https://docs.example.com/` and set
+`FIELDNOTES_DOCS_URL`. The prompt in `src/fieldnotes/app/brain.py` carries the domain hints (asset-backed
 finance) and is the place to adapt them.
 
 ## How it works
@@ -166,7 +163,7 @@ restarts; *End call* always produces a report.
 ### Project layout
 
 ```
-src/earpiece/
+src/fieldnotes/
   domain/     pure logic: turns, trigger rules, board merge, JSON parsing (no I/O)
   ports.py    Protocols for audio, transcription, turn sources and the model
   adapters/   sounddevice, Silero VAD, mlx-whisper, Agent SDK, docs crawler, replay, fakes
@@ -183,21 +180,21 @@ replaced by a fake. Replay mode and the test suite rely on that.
 uv sync --all-extras
 uv run pytest                                  # ~5 s; no model, no audio devices
 uv run ruff check . && uv run ruff format .
-uv run earpiece run --replay demo/mock_call.txt --fake-llm
+uv run fieldnotes run --replay demo/mock_call.txt --fake-llm
 ```
 
 Contributions are welcome. Please open an issue first for larger changes, and keep the rules that
-make Earpiece trustworthy: no audio on disk, consent before capture, nothing sent automatically,
+make Fieldnotes trustworthy: no audio on disk, nothing sent automatically,
 and a time limit on anything that waits.
 
-[`docs/demo.md`](docs/demo.md) has a two-minute script for presenting Earpiece.
+[`docs/demo.md`](docs/demo.md) has a two-minute script for presenting Fieldnotes.
 
 ## Notes
 
-Earpiece is a personal productivity tool. It is not affiliated with Fence or Anthropic. Telling
-people you transcribe a call, and following the recording laws that apply to you, is your
-responsibility. The consent screen helps, but it is not legal advice. The Agent SDK's terms do not
-allow offering claude.ai login to other users of a product, so each user runs Earpiece on their
+Fieldnotes is a personal productivity tool. It is not affiliated with Fence or Anthropic. It starts
+transcribing as soon as it runs: telling people you transcribe a call, and following the
+recording laws that apply to you, is your responsibility. The Agent SDK's terms do not
+allow offering claude.ai login to other users of a product, so each user runs Fieldnotes on their
 own Claude login.
 
 ## License

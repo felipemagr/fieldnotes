@@ -5,12 +5,12 @@ import time
 
 import pytest
 
-from earpiece.adapters.fake_llm import FakeLLM
-from earpiece.app import pipeline
-from earpiece.app.brain import Brain
-from earpiece.app.pipeline import ENDED, CallSession
-from earpiece.domain.trigger import TurnTrigger
-from earpiece.domain.turn import Turn
+from fieldnotes.adapters.fake_llm import FakeLLM
+from fieldnotes.app import pipeline
+from fieldnotes.app.brain import Brain
+from fieldnotes.app.pipeline import ENDED, CallSession
+from fieldnotes.domain.trigger import TurnTrigger
+from fieldnotes.domain.turn import Turn
 
 LONG = "our loan tape is an excel export that we cannot change because the vendor owns the format"
 
@@ -76,7 +76,7 @@ async def test_board_recovers_after_a_timeout(tmp_path):
 async def test_end_call_finishes_even_if_the_model_hangs(tmp_path):
     s = session(tmp_path, HangingLLM(), start_timeout_s=0.3, timeout_s=0.2, report_timeout_s=0.3)
     await s.prepare()
-    s.give_consent()
+    s.start_listening()
     s._on_turn(Turn(speaker="client", text=LONG, t0=0, t1=1))
     t = time.monotonic()
     await s.end()
@@ -124,8 +124,8 @@ async def test_restart_after_timeout_uses_its_own_budget():
     assert await brain.analyse([Turn(speaker="client", text=LONG, t0=0, t1=1)]) is not None
 
 
-async def test_consent_after_end_is_ignored(tmp_path):
+async def test_listening_does_not_restart_after_end(tmp_path):
     s = session(tmp_path, FakeLLM(delay_s=0))
     await s.end()
-    s.give_consent()
-    assert s.state == ENDED and s.consent_at is None
+    s.start_listening()
+    assert s.state == ENDED and s.started_at is None

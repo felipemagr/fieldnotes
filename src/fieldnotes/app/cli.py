@@ -1,4 +1,4 @@
-"""Command line: `earpiece run | devices | check-audio | docs pull`."""
+"""Command line: `fieldnotes run | devices | check-audio | docs pull`."""
 
 import logging
 import time
@@ -9,14 +9,14 @@ from typing import Annotated
 
 import typer
 
-from earpiece.adapters.llm_agent_sdk import ApiKeyInEnvironment, refuse_api_key
-from earpiece.settings import get_settings
+from fieldnotes.adapters.llm_agent_sdk import ApiKeyInEnvironment, refuse_api_key
+from fieldnotes.settings import get_settings
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 docs_app = typer.Typer(no_args_is_help=True, help="Fetch and cache the platform's API docs.")
 app.add_typer(docs_app, name="docs")
 
-logger = logging.getLogger("earpiece")
+logger = logging.getLogger("fieldnotes")
 
 
 @app.callback()
@@ -38,7 +38,7 @@ def main(verbose: Annotated[bool, typer.Option("--verbose", "-v")] = False) -> N
 
 def load_docs(url: str, refresh: bool = False, max_pages: int | None = None):
     """The docs bundle from the cache, crawled first when missing, expired or `refresh` is set."""
-    from earpiece.adapters.docs_crawler import DocsLibrary, crawl
+    from fieldnotes.adapters.docs_crawler import DocsLibrary, crawl
 
     s = get_settings()
     library = DocsLibrary(s.docs_dir, s.docs_ttl_days)
@@ -88,28 +88,28 @@ def run(
     """Start the live panel for one call."""
     import uvicorn
 
-    from earpiece.adapters.store import cleanup
-    from earpiece.app.brain import Brain
-    from earpiece.app.pipeline import CallSession
-    from earpiece.app.server import create_app
-    from earpiece.domain.trigger import TurnTrigger
+    from fieldnotes.adapters.store import cleanup
+    from fieldnotes.app.brain import Brain
+    from fieldnotes.app.pipeline import CallSession
+    from fieldnotes.app.server import create_app
+    from fieldnotes.domain.trigger import TurnTrigger
 
     s = get_settings()
     cleanup(s.calls_dir, s.retention_days)
 
     if replay:
-        from earpiece.adapters.replay import ReplaySource
+        from fieldnotes.adapters.replay import ReplaySource
 
         source = ReplaySource(replay, speed)
     else:
         source = build_live_source()
 
     if fake_llm:
-        from earpiece.adapters.fake_llm import FakeLLM
+        from fieldnotes.adapters.fake_llm import FakeLLM
 
         llm = FakeLLM()
     else:
-        from earpiece.adapters.llm_agent_sdk import ClaudeAgentSDKLLM
+        from fieldnotes.adapters.llm_agent_sdk import ClaudeAgentSDKLLM
 
         llm = ClaudeAgentSDKLLM(model or s.model)
 
@@ -126,7 +126,7 @@ def run(
     )
     port = port or s.port
     address = f"http://{s.host}:{port}"
-    typer.echo(f"Earpiece panel: {address}")
+    typer.echo(f"Fieldnotes panel: {address}")
     if open_browser:
         Timer(1.0, webbrowser.open, [address]).start()
     uvicorn.run(create_app(session), host=s.host, port=port, log_level="warning")
@@ -134,10 +134,10 @@ def run(
 
 def build_live_source():
     """Mic + BlackHole, Silero VAD per channel, Whisper loaded and warmed before the call."""
-    from earpiece.adapters.audio_sounddevice import DeviceNotFound, SoundDeviceSource
-    from earpiece.adapters.live import LiveTurnSource
-    from earpiece.adapters.stt_mlx_whisper import MlxWhisperTranscriber
-    from earpiece.adapters.vad_silero import Segmenter, silero_prob_fn
+    from fieldnotes.adapters.audio_sounddevice import DeviceNotFound, SoundDeviceSource
+    from fieldnotes.adapters.live import LiveTurnSource
+    from fieldnotes.adapters.stt_mlx_whisper import MlxWhisperTranscriber
+    from fieldnotes.adapters.vad_silero import Segmenter, silero_prob_fn
 
     s = get_settings()
     try:
@@ -194,7 +194,7 @@ def check_audio(seconds: Annotated[float, typer.Option()] = 15.0) -> None:
     import numpy as np
     import sounddevice as sd
 
-    from earpiece.adapters.audio_sounddevice import DeviceNotFound, find_input
+    from fieldnotes.adapters.audio_sounddevice import DeviceNotFound, find_input
 
     s = get_settings()
     levels = {"me": -90.0, "client": -90.0}

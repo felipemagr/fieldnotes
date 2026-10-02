@@ -4,7 +4,7 @@ that must stand without the network."""
 import asyncio
 import json
 
-from earpiece.app.brain import REPORT_MARKER
+from fieldnotes.app.brain import REPORT_MARKER
 
 REF = "https://docs.fence.finance/"
 

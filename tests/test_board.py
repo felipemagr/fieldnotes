@@ -1,5 +1,5 @@
-from earpiece.domain.board import Board, similar
-from earpiece.domain.suggestion import Mapping, Suggestion
+from fieldnotes.domain.board import Board, similar
+from fieldnotes.domain.suggestion import Mapping, Suggestion
 
 
 def test_similar():
