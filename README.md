@@ -101,6 +101,10 @@ Speaker identity comes from the channel, so no diarization is needed.
 Use headphones. With speakers, your microphone also picks up the client and attributes their
 words to you.
 
+To rehearse without a second person, run `scripts/mock_call.sh` in another terminal: a macOS
+voice speaks the CLIENT lines of `demo/mock_call.txt` into BlackHole and you read the ME lines
+into your microphone. Everything else is real (VAD, Whisper, Claude).
+
 ### Test scenarios
 
 `uv run python scripts/make_synthetic.py` writes `data/synthetic/`. It contains replayable calls

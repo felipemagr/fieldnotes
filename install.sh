@@ -88,8 +88,9 @@ else
     warn "BlackHole skipped: live calls need it (brew install --cask blackhole-2ch)."
   fi
   model="$(uv run python -c 'from fieldnotes.settings import get_settings; print(get_settings().whisper_model)')"
-  cache="$HOME/.cache/huggingface/hub/models--${model//\//--}"
-  if [ -d "$cache" ]; then
+  snapshots="$HOME/.cache/huggingface/hub/models--${model//\//--}/snapshots"
+  # The weights file, not the folder: an interrupted download leaves the folder behind.
+  if compgen -G "$snapshots/*/weights.safetensors" >/dev/null || compgen -G "$snapshots/*/weights.npz" >/dev/null; then
     ok "Whisper model already downloaded ($model)"
   elif ask "Download the Whisper model $model now (about 1.6 GB)?"; then
     uv run python -c '
