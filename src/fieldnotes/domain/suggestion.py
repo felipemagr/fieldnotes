@@ -8,6 +8,7 @@ class Mapping(BaseModel):
     approach: str  # how to do it on the platform
     endpoint: str | None = None  # exact endpoint from the docs, or None
     doc_ref: str | None = None  # docs page/section it came from
+    unverified: list[str] = []  # field names the docs never mention (set in code)
 
 
 class Suggestion(BaseModel):

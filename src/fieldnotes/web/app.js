@@ -68,6 +68,12 @@ function itemContent(item) {
     approach.className = "sub";
     approach.textContent = item.approach || "";
     box.append(approach);
+    if (item.unverified?.length) {
+      const warn = document.createElement("span");
+      warn.className = "sub unverified";
+      warn.textContent = `Not in docs: ${item.unverified.join(", ")}`;
+      box.append(warn);
+    }
   }
   return box;
 }

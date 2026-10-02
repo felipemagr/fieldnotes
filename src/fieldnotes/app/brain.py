@@ -1,11 +1,14 @@
 """The Brain: one conversation per call with the model, docs loaded once, turns sent in batches."""
 
 import asyncio
+import contextlib
 import logging
 import time
+from pathlib import Path
 
 from pydantic import ValidationError
 
+from fieldnotes.domain.grounding import DocsIndex
 from fieldnotes.domain.suggestion import Suggestion, parse_suggestion
 from fieldnotes.domain.turn import Turn
 from fieldnotes.ports import LLM
@@ -33,10 +36,8 @@ Rules:
 - The platform does not read client systems. Anything that adapts the client's side (parsing a
   file, receiving a webhook, polling an SFTP folder) is an adapter the engineer builds, which then
   calls a documented endpoint. Say so in approach.
-- Never decide what a credit agreement clause means (eligibility, covenants, waterfall, rates,
-  day count). Put those under route_to_ops.
-- Commercial topics (pricing, advance rates, fees, terms) go under route_to_ops.
-  An item under route_to_ops never also appears in fence_mapping or client_needs.
+- Route every item by "Who owns what" at the end of this prompt. Never decide what a credit
+  agreement clause means. An item under route_to_ops never appears in another section.
 - questions_to_ask finds what the client has NOT specified: data format, delivery channel and
   timing, full snapshot vs delta, identifiers, what a blank field means, status codes, time zones,
   restatements, who to contact when a file breaks. Phrase each as a question the engineer can
@@ -60,6 +61,14 @@ Rules:
   "Day and month swapped on parse". Bad: "The client needs an integration that can parse...".
 - Max 2 new items per section per update; empty lists are fine. Repeat nothing already given.
 - English only."""
+
+TEAMS_FILE = Path(__file__).resolve().parent.parent / "teams.md"
+
+
+def system_prompt(teams: str) -> str:
+    """The rules plus the ownership guide (teams.md), which says where each item goes."""
+    return f"{SYSTEM_PROMPT}\n\n{teams.strip()}"
+
 
 CONTEXT_TEMPLATE = """\
 Platform API documentation follows. Read it now; the call starts after it.
@@ -109,12 +118,18 @@ class Brain:
         start_timeout_s: float = 60.0,
         timeout_s: float = 30.0,
         report_timeout_s: float = 120.0,
+        teams: str | None = None,
+        report_llm: LLM | None = None,
     ):
         self.llm = llm
+        self.report_llm = report_llm  # a stronger model for the report; the live one if None
+        self.report_model: str | None = None  # which model wrote the last report
+        self.system_prompt = system_prompt(teams or TEAMS_FILE.read_text(encoding="utf-8"))
         self.start_timeout_s = start_timeout_s
         self.timeout_s = timeout_s
         self.report_timeout_s = report_timeout_s
         self._docs = ""
+        self.docs_index = DocsIndex()
         self._healthy = False
 
     @property
@@ -145,8 +160,9 @@ class Brain:
     async def start(self, docs_markdown: str) -> None:
         t = time.perf_counter()
         self._docs = docs_markdown
+        self.docs_index = DocsIndex.from_markdown(docs_markdown)
         async with asyncio.timeout(self.start_timeout_s):
-            await self.llm.start(SYSTEM_PROMPT, CONTEXT_TEMPLATE.format(docs=docs_markdown))
+            await self.llm.start(self.system_prompt, CONTEXT_TEMPLATE.format(docs=docs_markdown))
         self._healthy = True
         logger.info("Brain ready in %.1fs (%s)", time.perf_counter() - t, self.model)
 
@@ -170,12 +186,44 @@ class Brain:
                 logger.error("Skipping this batch, still no valid JSON: %s", second)
                 return None
         logger.info("Brain answered %d turns in %.2fs", len(turns), time.perf_counter() - t)
-        return suggestion
+        return self.ground(suggestion)
+
+    def ground(self, suggestion: Suggestion) -> Suggestion:
+        """Keep only endpoints and docs links the docs contain; flag unknown field names."""
+        if not self.docs_index:
+            return suggestion
+        checked = []
+        for mapping in suggestion.fence_mapping:
+            fixed = self.docs_index.check(mapping)
+            if fixed.endpoint != mapping.endpoint or fixed.unverified:
+                logger.warning(
+                    "Not in the docs: endpoint %r, fields %s", mapping.endpoint, fixed.unverified
+                )
+            checked.append(fixed)
+        return suggestion.model_copy(update={"fence_mapping": checked})
 
     async def report(self, transcript: list[Turn], board_text: str) -> str:
         prompt = REPORT_PROMPT.format(
             marker=REPORT_MARKER, turns=format_turns(transcript), board=board_text
         )
+        if self.report_llm is not None:
+            try:
+                async with asyncio.timeout(self.start_timeout_s):
+                    await self.report_llm.start(
+                        self.system_prompt, CONTEXT_TEMPLATE.format(docs=self._docs)
+                    )
+                async with asyncio.timeout(self.report_timeout_s):
+                    text = await self.report_llm.send(prompt)
+                self.report_model = self.report_llm.model
+                return text.strip()
+            except Exception as e:  # TimeoutError included: fall back to the live model
+                logger.warning(
+                    "Report with %s failed (%r); using %s", self.report_llm.model, e, self.model
+                )
+            finally:
+                with contextlib.suppress(Exception):
+                    await asyncio.wait_for(self.report_llm.close(), 5)
+        self.report_model = self.model
         return (await self._send(prompt, self.report_timeout_s)).strip()
 
     async def close(self) -> None:

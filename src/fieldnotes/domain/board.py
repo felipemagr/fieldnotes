@@ -21,6 +21,7 @@ class Item(BaseModel):
     approach: str | None = None  # mapping only
     endpoint: str | None = None  # mapping only
     doc_ref: str | None = None  # mapping only
+    unverified: list[str] = []  # mapping only: field names not in the docs
     round: int
     pinned: bool = False
     dismissed: bool = False
@@ -78,6 +79,7 @@ class Board:
                 existing.approach = mapping.approach
                 existing.endpoint = mapping.endpoint
                 existing.doc_ref = mapping.doc_ref
+                existing.unverified = mapping.unverified
                 existing.round = self.round
                 return existing
             return None
@@ -86,6 +88,7 @@ class Board:
             item.approach = mapping.approach
             item.endpoint = mapping.endpoint
             item.doc_ref = mapping.doc_ref
+            item.unverified = mapping.unverified
         self.items.append(item)
         return item
 

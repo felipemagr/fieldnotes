@@ -10,7 +10,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="FIELDNOTES_", env_file=".env", extra="ignore")
 
     # Brain
-    model: str = "haiku"
+    model: str = "haiku"  # live board: speed first
+    report_model: str = "opus"  # post-call report: quality first; empty = same as `model`
+    teams_file: Path | None = None  # who owns what; default src/fieldnotes/teams.md
     docs_url: str = "https://docs.fence.finance/"
     docs_dir: Path = Path("data/docs")
     docs_max_pages: int = 40

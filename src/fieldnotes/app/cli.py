@@ -108,7 +108,14 @@ def run(
     url = docs_url or s.docs_url
     session = CallSession(
         source=source,
-        brain=Brain(llm, s.llm_start_timeout_s, s.llm_timeout_s, s.report_timeout_s),
+        brain=Brain(
+            llm,
+            s.llm_start_timeout_s,
+            s.llm_timeout_s,
+            s.report_timeout_s,
+            teams=s.teams_file.read_text(encoding="utf-8") if s.teams_file else None,
+            report_llm=ClaudeAgentSDKLLM(s.report_model) if s.report_model else None,
+        ),
         docs_loader=lambda: load_docs(url)[0].markdown,
         calls_dir=s.calls_dir,
         name=name,

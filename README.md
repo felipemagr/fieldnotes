@@ -129,7 +129,9 @@ Settings are read from the environment or a `.env` file, prefixed with `FIELDNOT
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `FIELDNOTES_MODEL` | `haiku` | `haiku` is fast; `sonnet` is slower and stronger |
+| `FIELDNOTES_MODEL` | `haiku` | Live board: `haiku` is fast; `sonnet` is slower and stronger |
+| `FIELDNOTES_REPORT_MODEL` | `opus` | Post-call report; falls back to the live model on failure |
+| `FIELDNOTES_TEAMS_FILE` | `src/fieldnotes/teams.md` | Who owns what: how items are routed |
 | `FIELDNOTES_DOCS_URL` | `https://docs.fence.finance/` | Docs to ground suggestions in |
 | `FIELDNOTES_CLIENT_DEVICE` | `BlackHole 2ch` | Input that carries the call audio |
 | `FIELDNOTES_MIC_DEVICE` | system default | Your microphone |
@@ -149,7 +151,12 @@ Fieldnotes uses the last copy. `fieldnotes docs pull` runs the same check by han
 Fieldnotes was built against [Fence's API docs](https://docs.fence.finance/), but it works with any
 documentation site: run `fieldnotes docs pull https://docs.example.com/` and set
 `FIELDNOTES_DOCS_URL`. The prompt in `src/fieldnotes/app/brain.py` carries the domain hints (asset-backed
-finance) and is the place to adapt them.
+finance), and [`teams.md`](src/fieldnotes/teams.md) says who owns what (engineer, Ops, client).
+Edit both to fit another platform.
+
+Model output is checked against the docs in code. An endpoint the docs do not list is removed
+(the panel shows "not in docs"), a docs link to a section that does not exist is dropped, and a
+field name the docs never mention is flagged under its mapping.
 
 ## How it works
 

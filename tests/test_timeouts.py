@@ -129,3 +129,24 @@ async def test_listening_does_not_restart_after_end(tmp_path):
     await s.end()
     s.start_listening()
     assert s.state == ENDED and s.started_at is None
+
+
+async def test_report_falls_back_to_the_live_model():
+    brain = Brain(FakeLLM(), report_llm=HangingLLM(), report_timeout_s=0.2)
+    await brain.start("docs")
+    report = await brain.report([Turn(speaker="client", text=LONG, t0=0, t1=1)], "board")
+    assert report.startswith("## Summary") and brain.report_model == "fake"
+
+
+async def test_report_uses_the_report_model_when_it_works():
+    report_llm = FakeLLM()
+    report_llm.model = "opus"
+    brain = Brain(FakeLLM(), report_llm=report_llm)
+    await brain.start("docs")
+    await brain.report([], "board")
+    assert brain.report_model == "opus"
+
+
+def test_ownership_guide_is_in_the_prompt():
+    assert "Who owns what" in Brain(FakeLLM()).system_prompt
+    assert Brain(FakeLLM(), teams="# Custom owners").system_prompt.endswith("# Custom owners")

@@ -309,7 +309,7 @@ class CallSession:
             f"# Call report: {self.name}\n\n"
             f"- Date: {datetime.now():%Y-%m-%d %H:%M}\n"
             f"- Started: {started}\n"
-            f"- Model: {self.brain.model}\n\n"
+            f"- Models: {self.brain.model} live, {self.brain.report_model or 'no'} report\n\n"
         )
 
     def _save_report(self, text: str) -> Path:
