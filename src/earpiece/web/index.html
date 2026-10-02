@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Earpiece</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">Earpiece</span>
+    <span class="state" id="state"><i class="dot"></i><span id="state-text">connecting</span></span>
+    <span class="meta" id="latency" title="Client stopped talking to suggestions on screen"></span>
+    <span class="meta" id="model"></span>
+    <span class="spacer"></span>
+    <span class="error" id="error" hidden></span>
+    <button class="end" id="end" type="button" disabled>End call</button>
+  </header>
+
+  <section class="consent" id="consent" hidden>
+    <div class="consent-body">
+      <h1>Before we start</h1>
+      <p class="lead">Transcription starts only after everyone on the call has been told and agreed. Read this aloud, or paste it in the chat:</p>
+      <blockquote id="consent-script">I use a local tool that transcribes this call to help me take notes. Audio isn't stored and the transcript is only used for follow-up. Is that OK with everyone?</blockquote>
+      <div class="actions">
+        <button type="button" class="quiet" id="copy-consent">Copy chat message</button>
+        <button type="button" class="primary" id="agree">Participants informed and agreed</button>
+      </div>
+      <p class="hint" id="brain-hint">Loading the docs into the model…</p>
+    </div>
+  </section>
+
+  <main class="layout" id="layout" hidden>
+    <aside class="transcript" aria-label="Transcript">
+      <h2>Transcript</h2>
+      <ol id="turns"></ol>
+      <p class="empty" id="turns-empty">Listening. Turns appear here as people finish speaking.</p>
+    </aside>
+
+    <section class="board" id="board" aria-label="Suggestions">
+      <div class="col">
+        <section class="section" data-section="ask">
+          <h2>Ask next</h2>
+          <ul></ul>
+        </section>
+        <section class="section" data-section="mapping">
+          <h2>How it maps</h2>
+          <ul></ul>
+        </section>
+      </div>
+      <div class="col">
+        <section class="section" data-section="needs">
+          <h2>Client needs</h2>
+          <ul></ul>
+        </section>
+        <section class="section" data-section="ops">
+          <h2>Route to Ops</h2>
+          <ul></ul>
+        </section>
+        <section class="section" data-section="risks">
+          <h2>Risks</h2>
+          <ul></ul>
+        </section>
+      </div>
+    </section>
+
+    <section class="report" id="report" hidden aria-label="Post-call report">
+      <div class="report-head">
+        <h2>Post-call report</h2>
+        <span class="meta" id="report-path"></span>
+        <span class="spacer"></span>
+        <button type="button" class="quiet" id="copy-report">Copy</button>
+      </div>
+      <article id="report-body"></article>
+    </section>
+  </main>
+
+  <template id="item">
+    <li class="item">
+      <div class="item-text"></div>
+      <div class="item-tools">
+        <button type="button" class="icon pin" title="Pin" aria-label="Pin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 3h6l-1 6 4 4H6l4-4z"/></svg>
+        </button>
+        <button type="button" class="icon dismiss" title="Dismiss" aria-label="Dismiss">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </li>
+  </template>
+</body>
+</html>

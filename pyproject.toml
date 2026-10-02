@@ -1,0 +1,55 @@
+[project]
+name = "earpiece"
+version = "0.1.0"
+description = "Local call assistant for engineers who integrate client data: on-device transcription, API-grounded suggestions and post-call reports."
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "claude-agent-sdk",
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "pydantic-settings",
+    "httpx",
+    "markdownify",
+    "beautifulsoup4",
+    "typer",
+    "numpy",
+]
+
+[project.optional-dependencies]
+audio = [
+    "sounddevice",
+    "silero-vad",
+    "mlx-whisper",
+]
+
+[project.scripts]
+earpiece = "earpiece.app.cli:app"
+
+[dependency-groups]
+dev = ["pytest", "pytest-asyncio", "pytest-timeout", "ruff"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/earpiece"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+timeout = 30
+
+[tool.ruff.lint.per-file-ignores]
+# Transcripts and JSON fixtures are data; wrapping them would change them.
+"scripts/*" = ["E501"]
+"tests/*" = ["E501"]
