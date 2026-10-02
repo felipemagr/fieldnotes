@@ -1,33 +1,12 @@
-# Mock onboarding call: a Spanish consumer-lending originator joining a new facility.
-# Roughly five minutes at speaking pace. ME is the engineer, CLIENT is the originator's head of data.
+# Mock onboarding call, about two minutes: a Spanish consumer lender joining a new facility.
+# ME is the engineer, CLIENT is the lender's head of data.
 
-ME: Thanks for joining. The goal today is to understand how your loan data reaches us, so we can plan the integration for the new facility.
-CLIENT: Sure. So we are a consumer lender in Spain, mostly point of sale financing and small personal loans, around forty thousand active loans right now.
-ME: Great. How do you share the loan tape with lenders today?
-CLIENT: Today it is an Excel export from our loan management system. Honestly we cannot change the format, the vendor owns it, so whatever you build has to read that file as it is.
-ME: Understood. What does the file look like?
-CLIENT: One sheet, one row per loan. Dates are day month year with slashes, and the amounts use commas as the decimal separator, because it is the Spanish locale.
-ME: Okay, and how often do you send it?
-CLIENT: Monthly. Our finance team emails it to the lender on the third business day of the month, after the month end close.
-ME: Is it the full portfolio every month, or only what changed?
-CLIENT: The full book, every active loan. Loans that were repaid just disappear from the next file.
-ME: Got it. And how do repayments come in?
-CLIENT: Repayments come through Stripe. Customers pay by card or direct debit, and Stripe sends us webhooks when a payment succeeds or fails. We reconcile that into the loan system overnight.
-ME: Do you have a unique identifier per loan that never changes?
-CLIENT: Yes, every loan has a contract number. It stays the same for the life of the loan, even if something changes.
-CLIENT: One thing I should flag. Some loans have no days past due filled in. The column is just empty for a few hundred rows.
-ME: Do you know why it is empty?
-CLIENT: Not completely. I think some of them are new loans that have not had a first payment yet, but I am not sure that explains all of them.
-CLIENT: Also, we restructure loans sometimes. When a customer struggles we extend the term or lower the instalment, and in the system it keeps the same contract number but the schedule changes.
-ME: How would we see a restructuring in the file?
-CLIENT: There is a status column, but restructured loans just show as active. I would need to check with operations if there is another flag.
-CLIENT: We also have the signed contracts as PDFs, one per loan, in a shared drive. Would you need those as well?
-ME: Probably yes, for the facility. How are they named?
-CLIENT: By contract number, mostly. Some older ones have the customer name in the file name instead.
-CLIENT: And a commercial question. If our data is clean and on time, can we get a higher advance rate on the facility?
-ME: Good question, I will take that to the team.
-CLIENT: Another thing, our auditors asked how we prove what we sent and when. Can we check a file before we submit it, so we do not send something broken?
-ME: That is a fair ask. What happens today when a file has an error?
-CLIENT: Today the lender emails us back, sometimes a week later, and we resend the whole file. It is quite painful, and sometimes the same loans end up counted twice.
-CLIENT: Last thing, what time zone do you work in? Our month end is Madrid time, and Stripe reports in UTC.
-ME: Thanks, that is very useful. I will send a summary and the integration plan after the call.
+ME: Thanks for joining. How does your loan data reach lenders today?
+CLIENT: We are a consumer lender in Spain with about forty thousand loans. Every month our finance team emails an Excel export from our loan system. We cannot change the format, the vendor owns it.
+ME: What does the file look like?
+CLIENT: One row per loan. Dates are day month year, and amounts use commas as the decimal separator.
+ME: And repayments?
+CLIENT: They come through Stripe. Stripe sends us webhooks when a payment succeeds or fails.
+CLIENT: Two things to flag. Some loans have no days past due filled in, and we sometimes restructure loans but keep the same contract number.
+CLIENT: Also, if our data is clean and on time, can we get a higher advance rate?
+ME: Good questions. I will follow up on all of them.
