@@ -13,7 +13,6 @@ class Settings(BaseSettings):
     model: str = "haiku"
     docs_url: str = "https://docs.fence.finance/"
     docs_dir: Path = Path("data/docs")
-    docs_ttl_days: int = 7
     docs_max_pages: int = 40
     docs_delay_s: float = 0.5
     docs_warn_tokens: int = 120_000

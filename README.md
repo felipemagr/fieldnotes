@@ -25,7 +25,7 @@ Forward deployed and solutions engineers spend client calls working out how mess
 loan tapes, nightly SFTP files, webhooks) fits a platform's API, while also taking notes and
 thinking of the next question. Fieldnotes does the bookkeeping:
 
-- **Grounded in your docs.** It crawls the platform's API documentation once. Every mapping
+- **Grounded in your docs.** It reads the platform's API documentation, kept current. Every mapping
   names a documented endpoint and links to the section it came from, or says "not in docs, ask".
 - **Finds the gaps.** Questions target what the client has not said yet: formats, delivery
   channel, identifiers, blank fields, time zones, restatements. A question drops off the board
@@ -87,8 +87,7 @@ advance-rate question for Ops. [`docs/demo.md`](docs/demo.md) is a two-minute pr
 |---|---|
 | `fieldnotes run` | Listen to the call: mic and call audio, transcription, live panel |
 | `fieldnotes run --name "acme"` | Name the call (used in the report file name) |
-| `fieldnotes run --refresh-docs` | Re-crawl the docs before the call |
-| `fieldnotes docs pull [URL]` | Crawl and cache a docs site |
+| `fieldnotes docs pull [URL]` | Check the docs for changes now and show what changed |
 | `fieldnotes devices` | List audio inputs and show which one is the client channel |
 | `fieldnotes check-audio` | Live level meters for both channels |
 
@@ -121,7 +120,6 @@ Settings are read from the environment or a `.env` file, prefixed with `FIELDNOT
 |---|---|---|
 | `FIELDNOTES_MODEL` | `haiku` | `haiku` is fast; `sonnet` is slower and stronger |
 | `FIELDNOTES_DOCS_URL` | `https://docs.fence.finance/` | Docs to ground suggestions in |
-| `FIELDNOTES_DOCS_TTL_DAYS` | `7` | Re-crawl the docs after this many days |
 | `FIELDNOTES_CLIENT_DEVICE` | `BlackHole 2ch` | Input that carries the call audio |
 | `FIELDNOTES_MIC_DEVICE` | system default | Your microphone |
 | `FIELDNOTES_END_OF_TURN_MS` | `700` | Silence that ends a turn |
@@ -130,6 +128,12 @@ Settings are read from the environment or a `.env` file, prefixed with `FIELDNOT
 | `FIELDNOTES_LLM_TIMEOUT_S` | `30` | Time limit per model call |
 | `FIELDNOTES_KEEP_TRANSCRIPTS` | `false` | Keep transcripts on disk |
 | `FIELDNOTES_RETENTION_DAYS` | `7` | Delete kept transcripts after this many days |
+
+The docs stay current on their own. Every `fieldnotes run` asks the site whether each page
+changed since the last check (`ETag` / `Last-Modified`). An unchanged page answers `304 Not
+Modified` with no body, so the check costs one small request per page. A changed page is
+downloaded again and the log names the sections that were added, removed or changed. Offline,
+Fieldnotes uses the last copy. `fieldnotes docs pull` runs the same check by hand.
 
 Fieldnotes was built against [Fence's API docs](https://docs.fence.finance/), but it works with any
 documentation site: run `fieldnotes docs pull https://docs.example.com/` and set

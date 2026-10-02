@@ -35,39 +35,47 @@ def main(verbose: Annotated[bool, typer.Option("--verbose", "-v")] = False) -> N
         raise typer.Exit(2) from e
 
 
-def load_docs(url: str, refresh: bool = False, max_pages: int | None = None):
-    """The docs bundle from the cache, crawled first when missing, expired or `refresh` is set."""
-    from fieldnotes.adapters.docs_crawler import DocsLibrary, crawl
+def load_docs(url: str, force: bool = False, max_pages: int | None = None):
+    """The docs, checked against the site: re-crawled only when a page changed.
+
+    Returns (bundle, changes). Offline, or when the site fails, it falls back to the last crawl.
+    """
+    from fieldnotes.adapters.docs_crawler import Changes, DocsLibrary, crawl
 
     s = get_settings()
-    library = DocsLibrary(s.docs_dir, s.docs_ttl_days)
-    bundle = None if refresh else library.get(url)
-    if bundle is None:
-        logger.info("Crawling %s", url)
-        pages = max_pages or s.docs_max_pages
-        bundle = crawl(url, pages, s.docs_delay_s, max_seconds=s.docs_timeout_s)
-        if not bundle.pages:
+    library = DocsLibrary(s.docs_dir)
+    cached = library.get(url)
+    pages = max_pages or s.docs_max_pages
+    previous = None if force else cached
+    bundle = crawl(url, pages, s.docs_delay_s, max_seconds=s.docs_timeout_s, previous=previous)
+    if not bundle.pages:
+        if cached is None:
             raise RuntimeError(f"No pages could be fetched from {url}")
-        library.put(bundle)
+        logger.warning("Could not reach %s: using the docs from the last check", url)
+        return cached, Changes()
+    changes = bundle.changes_since(cached) if cached else Changes(added=["(first crawl)"])
+    library.put(bundle)  # also stores the latest ETags, so the next check is a 304
+    logger.info("Docs %s: %s", url, changes)
     if bundle.approx_tokens > s.docs_warn_tokens:
         logger.warning("Docs are large (~%d tokens): each call starts slower", bundle.approx_tokens)
-    return bundle
+    return bundle, changes
 
 
 @docs_app.command("pull")
 def docs_pull(
     url: Annotated[str | None, typer.Argument(help="Start URL (default: docs_url)")] = None,
-    force: Annotated[bool, typer.Option(help="Crawl even if the cache is fresh")] = True,
+    force: Annotated[bool, typer.Option(help="Re-download every page")] = False,
     max_pages: Annotated[int | None, typer.Option()] = None,
 ) -> None:
-    """Crawl same-domain pages from URL into one markdown file."""
+    """Check the docs for changes and update the local copy."""
     url = url or get_settings().docs_url
     try:
-        bundle = load_docs(url, refresh=force, max_pages=max_pages)
+        bundle, changes = load_docs(url, force=force, max_pages=max_pages)
     except RuntimeError as e:
         typer.secho(str(e), fg="red", err=True)
         raise typer.Exit(1) from e
-    typer.echo(f"{len(bundle.pages)} page(s), ~{bundle.approx_tokens:,} tokens")
+    status = f"updated ({changes})" if changes else "up to date"
+    typer.echo(f"Docs {status}. {len(bundle.pages)} page(s), ~{bundle.approx_tokens:,} tokens")
     for page in bundle.pages:
         typer.echo(f"  {page.url}  ({page.title})")
 
@@ -77,7 +85,6 @@ def run(
     name: Annotated[str, typer.Option(help="Call name, used in the report file name")] = "call",
     model: Annotated[str | None, typer.Option(help="haiku or sonnet")] = None,
     docs_url: Annotated[str | None, typer.Option()] = None,
-    refresh_docs: Annotated[bool, typer.Option(help="Re-crawl the docs before the call")] = False,
     port: Annotated[int | None, typer.Option()] = None,
     open_browser: Annotated[bool, typer.Option("--open/--no-open")] = True,
 ) -> None:
@@ -102,7 +109,7 @@ def run(
     session = CallSession(
         source=source,
         brain=Brain(llm, s.llm_start_timeout_s, s.llm_timeout_s, s.report_timeout_s),
-        docs_loader=lambda: load_docs(url, refresh_docs).markdown,
+        docs_loader=lambda: load_docs(url)[0].markdown,
         calls_dir=s.calls_dir,
         name=name,
         keep_transcripts=s.keep_transcripts,

@@ -64,7 +64,7 @@ if [ "$method" = "claude.ai" ]; then ok "logged in with Claude.ai (subscription,
 else warn "logged in with '$method', not Claude.ai: that may bill API credits."; fi
 
 bold "5/7 API docs"
-uv run fieldnotes docs pull --no-force | sed 's/^/  /'
+uv run fieldnotes docs pull | sed 's/^/  /'
 
 bold "6/7 Audio"
 if uv run fieldnotes devices 2>/dev/null | grep -q "client channel"; then

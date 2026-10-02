@@ -8,7 +8,6 @@ import logging
 import re
 import time
 from collections import deque
-from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urldefrag, urljoin, urlparse
 from urllib.robotparser import RobotFileParser
@@ -47,11 +46,59 @@ class Page(BaseModel):
     url: str
     title: str
     markdown: str
+    links: list[str] = []
+    etag: str | None = None
+    last_modified: str | None = None
+
+
+REF = re.compile(r"\[ref: ([^\]]+)\]")
+
+
+def sections(markdown: str) -> dict[str, str]:
+    """Each anchored section's text, keyed by its `[ref: url#id]`."""
+    found: dict[str, str] = {}
+    ref = None
+    for line in markdown.splitlines():
+        if line.startswith("#") and (m := REF.search(line)):
+            ref = m.group(1)
+            found[ref] = ""
+        elif ref:
+            found[ref] += line + "\n"
+    return found
+
+
+class Changes(BaseModel):
+    added: list[str] = []
+    removed: list[str] = []
+    changed: list[str] = []
+
+    def __bool__(self) -> bool:
+        return bool(self.added or self.removed or self.changed)
+
+    def __str__(self) -> str:
+        parts = [
+            f"{sign}{len(refs)} {label}: " + ", ".join(r.split("#")[-1] for r in refs)
+            for sign, label, refs in (
+                ("+", "added", self.added),
+                ("-", "removed", self.removed),
+                ("~", "changed", self.changed),
+            )
+            if refs
+        ]
+        return "; ".join(parts) or "no changes"
 
 
 class DocsBundle(BaseModel):
     start_url: str
     pages: list[Page]
+
+    def changes_since(self, old: "DocsBundle") -> Changes:
+        new_s, old_s = sections(self.markdown), sections(old.markdown)
+        return Changes(
+            added=[r for r in new_s if r not in old_s],
+            removed=[r for r in old_s if r not in new_s],
+            changed=[r for r in new_s if r in old_s and new_s[r] != old_s[r]],
+        )
 
     @property
     def markdown(self) -> str:
@@ -118,8 +165,14 @@ def crawl(
     delay_s: float = 0.5,
     client: httpx.Client | None = None,
     max_seconds: float = 60.0,
+    previous: DocsBundle | None = None,
 ) -> DocsBundle:
-    """Stops at `max_pages` or after `max_seconds`, keeping what it fetched so far."""
+    """Stops at `max_pages` or after `max_seconds`, keeping what it fetched so far.
+
+    With `previous`, each known page is asked for only if it changed (ETag / Last-Modified):
+    an unchanged page costs one small request that comes back 304 with no body.
+    """
+    known = {p.url: p for p in previous.pages} if previous else {}
     deadline = time.monotonic() + max_seconds
     client = client or httpx.Client(
         headers={"User-Agent": USER_AGENT}, follow_redirects=True, timeout=10
@@ -137,22 +190,39 @@ def crawl(
             continue
         if pages:
             time.sleep(delay_s)
+        old = known.get(url)
+        headers = {}
+        if old and old.etag:
+            headers["If-None-Match"] = old.etag
+        if old and old.last_modified:
+            headers["If-Modified-Since"] = old.last_modified
         try:
-            response = client.get(url)
+            response = client.get(url, headers=headers)
         except httpx.HTTPError as e:
             logger.warning("Could not fetch %s: %s", url, e)
             continue
-        if response.status_code != 200 or "html" not in response.headers.get("content-type", ""):
+        if response.status_code == 304 and old:
+            page = old
+        elif response.status_code == 200 and "html" in response.headers.get("content-type", ""):
+            title, md = html_to_markdown(response.text, url)
+            page = Page(
+                url=url,
+                title=title,
+                markdown=md,
+                links=links(response.text, url),
+                etag=response.headers.get("etag"),
+                last_modified=response.headers.get("last-modified"),
+            )
+            logger.info("Fetched %s (%d chars)", url, len(md))
+        else:
             continue
-        title, md = html_to_markdown(response.text, url)
         # The same page under two URLs (`/` and `/index.html`) is kept once.
-        body = re.sub(r"\[ref: [^\]]*\]", "", md)
+        body = REF.sub("", page.markdown)
         if body in bodies:
             continue
         bodies.add(body)
-        pages.append(Page(url=url, title=title, markdown=md))
-        logger.info("Fetched %s (%d chars)", url, len(md))
-        for link in links(response.text, url):
+        pages.append(page)
+        for link in page.links:
             if link not in seen and same_site(link, start):
                 seen.add(link)
                 queue.append(link)
@@ -160,10 +230,10 @@ def crawl(
 
 
 class DocsLibrary:
-    """Crawled docs on disk, refreshed after the TTL."""
+    """The last crawl of each docs site, on disk."""
 
-    def __init__(self, directory: Path, ttl_days: int):
-        self.cache = JsonCache(directory, timedelta(days=ttl_days))
+    def __init__(self, directory: Path):
+        self.cache = JsonCache(directory)
 
     def get(self, url: str) -> DocsBundle | None:
         payload = self.cache.get(url)

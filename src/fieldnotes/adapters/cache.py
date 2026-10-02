@@ -1,13 +1,10 @@
-"""One JSON file per key with a time to live."""
+"""One JSON file per key."""
 
 import json
-import logging
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
-logger = logging.getLogger(__name__)
 
 
 def slug(text: str) -> str:
@@ -15,24 +12,17 @@ def slug(text: str) -> str:
 
 
 class JsonCache:
-    def __init__(self, directory: Path, ttl: timedelta):
+    def __init__(self, directory: Path):
         self.directory = directory
-        self.ttl = ttl
 
     def path(self, key: str) -> Path:
         return self.directory / f"{slug(key)}.json"
 
     def get(self, key: str) -> dict[str, Any] | None:
-        """The stored payload while it is younger than the TTL, else None."""
         path = self.path(key)
         if not path.exists():
             return None
-        entry = json.loads(path.read_text(encoding="utf-8"))
-        stored_at = datetime.fromisoformat(entry["stored_at"])
-        if datetime.now(UTC) - stored_at > self.ttl:
-            logger.info("Cache entry for %s expired", key)
-            return None
-        return entry["payload"]
+        return json.loads(path.read_text(encoding="utf-8"))["payload"]
 
     def put(self, key: str, payload: dict[str, Any]) -> Path:
         path = self.path(key)
