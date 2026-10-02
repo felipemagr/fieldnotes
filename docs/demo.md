@@ -1,18 +1,16 @@
 # Two-minute demo
 
-Setup: `uv run fieldnotes run --name demo` in one terminal, `scripts/mock_call.sh` ready in a
-second, headphones on, the panel shared on screen.
+Run `./fieldnotes.sh --demo`, share the panel. Each client line shows one capability.
 
-1. **(15 s)** "On client calls I spend half my head on notes. Fieldnotes listens on my Mac and
-   keeps the integration map for me. Audio never leaves the laptop."
-2. **(15 s)** Start `scripts/mock_call.sh`. Read your first line. The client answers, and the
-   transcript fills on the left, ME and CLIENT apart.
-3. **(45 s)** The client describes the Excel tape. Point at **How it maps**: Excel tape →
-   `POST /v2/declarations`, with a link to the docs section, and `dry_run` before the real run.
-   Stripe becomes our webhook intake posting to `payments/bulk`. "Only endpoints from the docs."
-4. **(20 s)** **Ask next**: blank DPD, restructured loans, time zones. "It asks what the client
-   has not said. Answered questions drop off."
-5. **(10 s)** **Route to Ops**: the advance-rate question. "Commercial and credit-agreement
-   topics are not mine to answer."
-6. **(15 s)** Click **End call**. The report appears: plan, endpoints, risks, open questions for
-   Ops and a draft email. "I edit and send it myself. Nothing goes out automatically."
+| Client says | Point at |
+|---|---|
+| Monthly Excel export, vendor format, Spanish dates and decimals | **How it maps**: file adapter → `POST /v2/declarations`, with a docs link. **Risks**: day/month swap, decimal commas |
+| The whole book every month | **Ask next** never asks "full book or changes?": it heard the answer |
+| Errors found a week later, loans counted twice, can we check first? | `dry_run` before the real run; `external_id` stops duplicates |
+| Stripe webhooks, Madrid month end vs UTC | Our webhook intake → `payments/bulk`; risks: out-of-order events, time-zone cut-off |
+| Blank DPD, restructured loans keep their number, do they still count? | **Ask next**: blank DPD, restructure flag. **Route to Ops**: eligibility |
+| Can your platform send us a webhook? | Not in the docs: flagged, no invented endpoint |
+| Higher advance rate for clean data? | **Route to Ops** |
+
+Then **End call**: the report (Opus) has the plan with endpoints, questions for the client, items
+for Ops, risks and a draft email that never mentions Ops or the advance-rate terms.

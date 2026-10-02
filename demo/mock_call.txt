@@ -1,12 +1,23 @@
 # Mock onboarding call, about two minutes: a Spanish consumer lender joining a new facility.
+# Each client turn exercises one thing the panel does (comments say what).
 # ME is the engineer, CLIENT is the lender's head of data.
 
 ME: Thanks for joining. How does your loan data reach lenders today?
-CLIENT: We are a consumer lender in Spain with about forty thousand loans. Every month our finance team emails an Excel export from our loan system. We cannot change the format, the vendor owns it.
-ME: What does the file look like?
-CLIENT: One row per loan. Dates are day month year, and amounts use commas as the decimal separator.
+# Mapping with a docs link (file adapter -> declarations); risks from Spanish formats.
+CLIENT: Every month our finance team emails an Excel export of about forty thousand loans. The vendor owns the format, so we cannot change it. Dates are day month year and amounts use decimal commas.
+ME: Is it the whole book every month, or only the changes?
+# Already answered: the board should never ask "full book or changes?".
+CLIENT: The whole book. Loans that are repaid simply disappear from the next file.
+ME: What goes wrong today?
+# Validation (dry_run) and idempotency (external_id) from a plain-language complaint.
+CLIENT: When a file has errors the lender tells us a week later, we resend everything, and some loans get counted twice. Can we check a file before we send it?
 ME: And repayments?
-CLIENT: They come through Stripe. Stripe sends us webhooks when a payment succeeds or fails.
-CLIENT: Two things to flag. Some loans have no days past due filled in, and we sometimes restructure loans but keep the same contract number.
-CLIENT: Also, if our data is clean and on time, can we get a higher advance rate?
-ME: Good questions. I will follow up on all of them.
+# Stripe -> our webhook intake -> payments/bulk; out-of-order and duplicate delivery risks.
+CLIENT: Through Stripe webhooks. Our month end is Madrid time, but Stripe reports in UTC.
+# Two questions for the client, and one for Ops (eligibility of restructured loans).
+CLIENT: Some loans have no days past due filled in, and when we restructure a loan it keeps the same contract number. Does a restructured loan still count for the facility?
+# Not in the docs: should come back as "not in docs, ask", not an invented endpoint.
+CLIENT: Also, can your platform send us a webhook when a submission finishes?
+# Commercial: routed to Ops, and kept out of the client email.
+CLIENT: Last one. If our data is clean and on time, can we get a higher advance rate?
+ME: Good questions. I will send you a summary and the next steps.
