@@ -71,17 +71,25 @@ Reply with exactly: OK
 
 REPORT_PROMPT = """\
 {marker} Write the post-call report in markdown, for the engineer to edit. No JSON, no title:
-start directly with "## Summary". Plain and short: bullets of 15 words at most, no adverbs, no
-hedging, no em dashes, no restating the transcript. Summary is 3 bullets.
+start directly with "## Summary". Every section is a list of bullets of 15 words at most, except
+the email. No adverbs, no hedging, no em dashes, no restating the transcript.
 Use exactly these sections:
 ## Summary
+(exactly 3 bullets)
 ## Decisions made
-## Open questions for Ops
+## Ask the client
+(what the client still has to tell us: data, formats, fields, delivery, contacts. Never
+commercial topics: those go only under For Ops)
+## For Ops (internal)
+(commercial and credit-agreement topics only: pricing, advance rates, eligibility, covenants)
 ## Integration plan
-(numbered steps; name data sources and only documented endpoints)
+(numbered steps. The engineer's adapters read the client's files and events and call the
+platform; the client does not call our adapters. Name data sources and only documented endpoints)
 ## Risks
 ## Draft follow-up email
-(mark it DRAFT; under 120 words; the engineer edits and sends it, nothing is sent automatically)
+(to the client. Mark it DRAFT, under 120 words. Ask only the "Ask the client" questions. Never
+mention Ops, any internal team or our credit terms; for commercial questions the client raised,
+write "we will come back to you on <topic>". Nothing is sent automatically)
 
 The whole call, start to end:
 {turns}
