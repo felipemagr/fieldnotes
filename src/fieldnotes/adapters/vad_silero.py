@@ -60,6 +60,11 @@ class Segmenter:
         self._start_frame = 0
         self._pre_frames = 0
 
+    @property
+    def open_since(self) -> float | None:
+        """When the speech still in progress started (seconds), or None in silence."""
+        return self._start_frame * FRAME / self.sr if self._speech else None
+
     def feed(self, pcm: np.ndarray) -> list[Utterance]:
         """Add audio; return the utterances it finished."""
         audio = np.concatenate([self._carry, pcm.astype(np.float32, copy=False)])

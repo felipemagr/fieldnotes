@@ -7,6 +7,7 @@ time) and come back as turns in the order they were spoken.
 import asyncio
 import logging
 import time
+from collections import deque
 from collections.abc import AsyncIterator, Callable
 from concurrent.futures import ThreadPoolExecutor
 
@@ -17,16 +18,45 @@ from fieldnotes.ports import AudioSource, Transcriber
 logger = logging.getLogger(__name__)
 
 
+class EchoGuard:
+    """Tells your speech from the client's voice leaking into your mic.
+
+    On speakers, the mic hears the client too, and that would show up as ME. Speech on your
+    channel that mostly overlaps in time with the client's is that echo. Both channels share one
+    clock (seconds since capture started), so spans compare directly. The cost: a short
+    interjection while the client talks is dropped as well. Headphones avoid both.
+    """
+
+    def __init__(self, overlap: float = 0.6, keep_s: float = 60.0):
+        self.overlap = overlap
+        self.keep_s = keep_s
+        self.client_spans: deque[tuple[float, float]] = deque()
+
+    def client_spoke(self, t0: float, t1: float) -> None:
+        self.client_spans.append((t0, t1))
+        while self.client_spans and self.client_spans[0][1] < t1 - self.keep_s:
+            self.client_spans.popleft()
+
+    def is_echo(self, t0: float, t1: float, client_open_since: float | None = None) -> bool:
+        spans = list(self.client_spans)
+        if client_open_since is not None:  # the client is still talking
+            spans.append((client_open_since, t1))
+        covered = sum(max(0.0, min(t1, b) - max(t0, a)) for a, b in spans)
+        return covered >= self.overlap * (t1 - t0)
+
+
 class LiveTurnSource:
     def __init__(
         self,
         audio: AudioSource,
         transcriber: Transcriber,
         segmenters: dict[Speaker, Segmenter],
+        echo_guard: EchoGuard | None = None,
     ):
         self.audio = audio
         self.transcriber = transcriber
         self.segmenters = segmenters
+        self.echo_guard = echo_guard
         self._worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="whisper")
         self._stopped = False
 
@@ -51,6 +81,13 @@ class LiveTurnSource:
         pending: asyncio.Queue[asyncio.Future | None] = asyncio.Queue()
 
         def submit(speaker: Speaker, u: Utterance) -> None:
+            guard = self.echo_guard
+            if guard is not None:
+                if speaker == "client":
+                    guard.client_spoke(u.t0, u.t1)
+                elif guard.is_echo(u.t0, u.t1, self.segmenters["client"].open_since):
+                    logger.info("Dropped %.1fs on the mic: the client's voice (echo)", u.t1 - u.t0)
+                    return
             on_activity("transcribing")
             future = loop.run_in_executor(self._worker, self._transcribe, speaker, u, time.time())
             pending.put_nowait(future)

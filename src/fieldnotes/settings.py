@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     end_of_turn_ms: int = 700
     min_utterance_s: float = 0.5
     max_utterance_s: float = 25.0
+    echo_guard: bool = True  # drop mic speech that overlaps the client's (call on speakers)
 
     # Speech to text
     whisper_model: str = "mlx-community/whisper-large-v3-turbo"

@@ -120,7 +120,7 @@ def run(
 def build_live_source():
     """Mic + BlackHole, Silero VAD per channel, Whisper loaded and warmed before the call."""
     from fieldnotes.adapters.audio_sounddevice import DeviceNotFound, SoundDeviceSource
-    from fieldnotes.adapters.live import LiveTurnSource
+    from fieldnotes.adapters.live import EchoGuard, LiveTurnSource
     from fieldnotes.adapters.stt_mlx_whisper import MlxWhisperTranscriber
     from fieldnotes.adapters.vad_silero import Segmenter, silero_prob_fn
 
@@ -144,7 +144,12 @@ def build_live_source():
             s.max_utterance_s,
         )
 
-    return LiveTurnSource(audio, transcriber, {"me": segmenter(), "client": segmenter()})
+    return LiveTurnSource(
+        audio,
+        transcriber,
+        {"me": segmenter(), "client": segmenter()},
+        EchoGuard() if s.echo_guard else None,
+    )
 
 
 @app.command()

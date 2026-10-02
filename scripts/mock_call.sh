@@ -3,8 +3,8 @@
 #
 # A macOS voice plays the client. It speaks into BlackHole, as a call app would, and into your
 # headphones, so you hear the client. You read your lines into the mic and press Enter after
-# each one. Start `uv run fieldnotes run --name demo` in another terminal first. Headphones on:
-# with speakers, the mic hears the client too.
+# each one. Start `uv run fieldnotes run --name demo` in another terminal first. Use headphones:
+# on speakers the mic hears the client too (Fieldnotes drops that echo, at some cost).
 #
 #   scripts/mock_call.sh
 set -euo pipefail
@@ -31,6 +31,10 @@ client() {
   fi
 }
 
+if [[ "$OUTPUT" == *Speakers* ]]; then
+  echo "Note: the client plays on your speakers, so your mic hears it. Fieldnotes drops that echo,"
+  echo "but headphones are cleaner: switch the sound output to them for the most realistic run."
+fi
 echo "Mock call, client heard on: $OUTPUT. Your lines are in yellow: read, then press Enter."
 while IFS= read -r line || [ -n "$line" ]; do
   case "$line" in
