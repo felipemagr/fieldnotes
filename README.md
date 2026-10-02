@@ -81,6 +81,17 @@ When it finishes, click **End call** for the report. The script is `demo/mock_ca
 Spanish consumer lender with a fixed Excel tape, Stripe repayments, blank DPD and an
 advance-rate question for Ops. [`docs/demo.md`](docs/demo.md) is a two-minute presenter script.
 
+### One command
+
+`./fieldnotes.sh` sets the audio up, runs Fieldnotes and puts the audio back when you press
+Ctrl+C. While it runs, the Mac's sound goes to your speakers or headphones and to BlackHole, so
+you hear the call and Fieldnotes hears the client; call apps on "System default" follow it.
+
+```sh
+./fieldnotes.sh "acme"     # a real call
+./fieldnotes.sh --demo     # the mock call
+```
+
 ## Usage
 
 | Command | What it does |

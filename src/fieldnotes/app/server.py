@@ -1,6 +1,7 @@
 """The live panel: one page, server-sent events from `/events`, a few POST actions."""
 
 import asyncio
+import contextlib
 import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -26,7 +27,9 @@ def create_app(session: CallSession) -> FastAPI:
         session.start_preparing()
         session.start_listening()
         yield
-        await session.close()
+        # A second Ctrl+C cancels this shutdown; quitting is what was asked, so stay quiet.
+        with contextlib.suppress(asyncio.CancelledError):
+            await session.close()
 
     app = FastAPI(title="Fieldnotes", lifespan=lifespan)
     app.mount("/static", StaticFiles(directory=WEB), name="static")

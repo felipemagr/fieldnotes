@@ -297,7 +297,7 @@ class CallSession:
         for task in list(self._tasks):
             task.cancel()
         if self._tasks:
-            await asyncio.wait(set(self._tasks), timeout=5)
+            await asyncio.wait(set(self._tasks), timeout=2)
         with contextlib.suppress(Exception):
             await self.brain.close()
 

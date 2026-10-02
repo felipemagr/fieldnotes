@@ -3,10 +3,8 @@
 #
 # A macOS voice plays the client. It speaks into BlackHole, as a call app would, and into your
 # headphones, so you hear the client. You read your lines into the mic and press Enter after
-# each one. Start `uv run fieldnotes run --name demo` in another terminal first. Use headphones:
-# on speakers the mic hears the client too (Fieldnotes drops that echo, at some cost).
-#
-#   scripts/mock_call.sh
+# each one. `./fieldnotes.sh --demo` runs it for you; to run it alone, start Fieldnotes first.
+# Headphones are cleaner: on speakers the mic hears the client too (Fieldnotes drops that echo).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -22,8 +20,8 @@ if [ "$OUTPUT" = "$DEVICE" ]; then
 fi
 
 client() {
-  if [[ "$OUTPUT" == *Multi-Output* ]]; then
-    say -v "$VOICE" "$1"  # the Multi-Output Device already feeds both BlackHole and you
+  if [[ "$OUTPUT" == *Multi-Output* || "$OUTPUT" == "Fieldnotes Output" ]]; then
+    say -v "$VOICE" "$1"  # this output already feeds both BlackHole and you
   else
     say -a "$DEVICE" -v "$VOICE" "$1" &  # same voice and rate on both outputs: in step
     say -v "$VOICE" "$1"

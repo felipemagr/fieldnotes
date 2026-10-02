@@ -224,3 +224,4 @@ calls/
 # Local AI-assistant files, not part of the tool.
 CLAUDE.md
 .claude/
+.build/

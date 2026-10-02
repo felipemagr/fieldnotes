@@ -128,4 +128,4 @@ class ClaudeAgentSDKLLM:
         client, self._client = self._client, None
         if client is not None:
             with contextlib.suppress(Exception):
-                await asyncio.wait_for(client.disconnect(), 5)
+                await asyncio.wait_for(client.disconnect(), 2)
