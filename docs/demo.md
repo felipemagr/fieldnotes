@@ -1,16 +1,17 @@
 # Two-minute demo
 
-Run `./fieldnotes.sh --demo`, share the panel. Each client line shows one capability.
+Run `./fieldnotes.sh --demo` and share the panel. You ask seven playbook questions; the client
+answers. Point at the panel after each answer.
 
-| Client says | Point at |
+| You ask | Point at |
 |---|---|
-| Monthly Excel export, vendor format, Spanish dates and decimals | **How it maps**: file adapter → `POST /v2/declarations`, with a docs link. **Risks**: day/month swap, decimal commas |
-| The whole book every month | **Ask next** never asks "full book or changes?": it heard the answer |
-| Errors found a week later, loans counted twice, can we check first? | `dry_run` before the real run; `external_id` stops duplicates |
-| Stripe webhooks, Madrid month end vs UTC | Our webhook intake → `payments/bulk`; risks: out-of-order events, time-zone cut-off |
-| Blank DPD, restructured loans keep their number, do they still count? | **Ask next**: blank DPD, restructure flag. **Route to Ops**: eligibility |
-| Can your platform send us a webhook? | Not in the docs: flagged, no invented endpoint |
-| Higher advance rate for clean data? | **Route to Ops** |
+| How do you send loan data today? | **How it maps**: Excel → file adapter → `POST /v2/declarations`, with a docs link |
+| What does the file look like? | **Risks**: day/month swap, decimal commas |
+| Full portfolio or only changes? | **Ask next** never asks it: it heard the answer |
+| What happens when a file has errors? | `dry_run` before sending; `external_id` stops double counting |
+| How do repayments come in? | Stripe → our webhook intake → `payments/bulk`; risk: Madrid vs UTC cut-off |
+| Anything unusual in the data? | **Ask next**: blank DPD, restructure ID. **Route to Ops**: do they still count? |
+| Anything else you need from us? | Outbound webhook: **not in docs**. Advance rate: **Route to Ops** |
 
-Then **End call**: the report (Opus) has the plan with endpoints, questions for the client, items
-for Ops, risks and a draft email that never mentions Ops or the advance-rate terms.
+Then **End call**: the report has the plan with endpoints, questions for the client, items for
+Ops, risks and a draft email that never mentions Ops or advance-rate terms.
